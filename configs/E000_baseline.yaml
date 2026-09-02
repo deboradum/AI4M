@@ -1,0 +1,23 @@
+# E000: the untouched course baseline, for reference only.
+#
+# This run was NOT produced from this file. It was trained on the original course
+# code (commit 37ae4b8), before the YAML configuration existed, with:
+#   python -O main.py --dataset SEGTHOR --mode full --epochs 25 --dest results/segthor/ce --gpu
+# The values below are what that code had hardcoded. It had no seed, so E000 is
+# not reproducible; E001 is the same settings with seed 123 and is the parent
+# of every later experiment.
+dataset: "SEGTHOR"
+mode: "full"
+K: 5
+net_name: "ENet"
+B: 8
+kernels: 8
+factor: 2
+lr: 0.0005
+betas: [0.9, 0.999]
+epochs: 25
+num_workers: 5
+temperature: 1.0
+optimizer: "Adam"
+seed: null  # unseeded run (main.py skips seeding when null)
+patience: -1  # -1 for disabling

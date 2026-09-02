@@ -5,7 +5,7 @@
 # Collect, for one or several runs, the configuration (config_dump.yaml), the
 # cost (stats.json from main.py, timing.txt from infer.py) and the 3D metrics
 # (metrics3d/metrics.csv from metrics3d.py) into one row per run, printed as
-# a Markdown table ready for EXPERIMENTS.md and optionally saved as csv.
+# a Markdown table ready for the experiment log and optionally saved as csv.
 #
 #   python summarize.py results/E001 results/E002 --volumes volumes --csv results/summary.csv
 

@@ -145,7 +145,7 @@ def save_results(dest: Path, ids: list[str], per_patient: dict[str, dict[str, np
     for m in METRICS:
         np.savez(dest / f"{m}.npz", **{id_: per_patient[id_][m] for id_ in ids})
 
-    # Long-format csv, convenient for pandas / EXPERIMENTS.md
+    # Long-format csv, convenient for pandas or the experiment log
     with open(dest / "metrics.csv", "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["patient", "class", "class_name"] + METRICS)

@@ -58,7 +58,11 @@ from configType import TrainConfig, NETWORKS
 from runstats import RunStats
 from metrics import iou_coef, precision_coef, recall_coef
 
-def set_seed(seed: int):
+def set_seed(seed: int | None):
+    if seed is None:
+        print("No seed set: this run is not reproducible")
+        return
+
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -364,4 +368,4 @@ def main():
 if __name__ == '__main__':
     main()
 
-# python -O main.py --config configs/TOY2_default_config.yaml --dest results/toy2/ce_with_cfg --mps
+# python -O main.py --config configs/defaults/TOY2.yaml --dest results/toy2_smoke --mps
