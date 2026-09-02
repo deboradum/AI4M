@@ -20,6 +20,7 @@ class TrainConfig:
     temperature: float
     optimizer: str
     seed: int
+    patience: int
 
 NETWORKS = {
     'shallowCNN': shallowCNN,
