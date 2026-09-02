@@ -55,6 +55,7 @@ from utils import (Dcm,
 from losses import (CrossEntropy)
 
 from configType import TrainConfig, NETWORKS
+from runstats import RunStats
 from metrics import iou_coef, precision_coef, recall_coef
 
 def set_seed(seed: int):
@@ -175,7 +176,11 @@ def runTraining(args, config: TrainConfig):
     log_present_val: Tensor = torch.zeros((config.epochs, len(val_loader.dataset), K), dtype=torch.bool)
 
     best_dice: float = 0
+    best_epoch: int = -1
     epochs_without_improvement: int = 0
+
+    stats = RunStats(net, device, args.dest,
+                     n_train=len(train_loader.dataset), n_val=len(val_loader.dataset), batch_size=config.B)
 
     for e in range(config.epochs):
         for m in ['train', 'val']:
@@ -205,6 +210,7 @@ def runTraining(args, config: TrainConfig):
                     log_rec = log_rec_val
                     log_present = log_present_val
 
+            stats.phase_start()
             with cm():  # Either dummy context manager, or the torch.no_grad for validation
                 j = 0
                 tq_iter = tqdm_(enumerate(loader), total=len(loader), desc=desc)
@@ -262,6 +268,7 @@ def runTraining(args, config: TrainConfig):
                     #         postfix_dict[f"P-{k}"] = f"{log_prec[e, :j, k].mean():05.3f}"
                     #         postfix_dict[f"R-{k}"] = f"{log_rec[e, :j, k].mean():05.3f}"
                     tq_iter.set_postfix(postfix_dict)
+            stats.phase_end(m, e)
 
         # I save it at each epochs, in case the code crashes or I decide to stop it early
         np.save(args.dest / "loss_tra.npy", log_loss_tra)
@@ -298,6 +305,7 @@ def runTraining(args, config: TrainConfig):
 
             print(message.strip())
             best_dice = current_dice
+            best_epoch = e
             with open(args.dest / "best_epoch.txt", 'w') as f:
                 f.write(message)
 
@@ -310,6 +318,8 @@ def runTraining(args, config: TrainConfig):
             torch.save(net.state_dict(), args.dest / "bestweights.pt")
         else:
             epochs_without_improvement += 1
+
+        stats.epoch_end(e, current_dice, best_epoch, best_dice)
 
         # patience=-1 disables it
         if config.patience != -1 and epochs_without_improvement >= config.patience:
