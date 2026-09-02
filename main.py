@@ -153,6 +153,7 @@ def runTraining(args, config: TrainConfig):
     log_dice_val: Tensor = torch.zeros((config.epochs, len(val_loader.dataset), K))
 
     best_dice: float = 0
+    epochs_without_improvement: int = 0
 
     for e in range(config.epochs):
         for m in ['train', 'val']:
@@ -228,6 +229,8 @@ def runTraining(args, config: TrainConfig):
 
         current_dice: float = log_dice_val[e, :, 1:].mean().item()
         if current_dice > best_dice:
+            epochs_without_improvement = 0
+
             message = f">>> Improved dice at epoch {e}: {best_dice:05.3f}->{current_dice:05.3f} DSC"
             print(message)
             best_dice = current_dice
@@ -241,7 +244,13 @@ def runTraining(args, config: TrainConfig):
 
             torch.save(net, args.dest / "bestmodel.pkl")
             torch.save(net.state_dict(), args.dest / "bestweights.pt")
+        else:
+            epochs_without_improvement += 1
 
+        # patience=-1 disables it
+        if config.patience != -1 and epochs_without_improvement >= config.patience:
+            print(f">>> Early stopping triggered after {e} epochs (no improvement for {config.patience} epochs).")
+            break
 
 def main():
     parser = argparse.ArgumentParser()
