@@ -17,6 +17,9 @@ class TrainConfig:
     betas: Tuple[float, float]
     epochs: int
     num_workers: int
+    temperature: float
+    optimizer: str
+    seed: int
 
 NETWORKS = {
     'shallowCNN': shallowCNN,

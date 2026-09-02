@@ -23,6 +23,7 @@
 # SOFTWARE.
 
 import yaml
+import random
 import argparse
 import warnings
 from typing import Any
@@ -55,6 +56,22 @@ from losses import (CrossEntropy)
 
 from configType import TrainConfig, NETWORKS
 
+def set_seed(seed: int):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+
+    if torch.mps.is_available():
+        torch.mps.manual_seed(seed)
+
+    print(f"Set seed {seed}")
+
 def img_transform(img):
         img = img.convert('L')
         img = np.array(img)[np.newaxis, ...]
@@ -86,7 +103,8 @@ def setup(args, config: TrainConfig) -> tuple[nn.Module, Any, Any, DataLoader, D
     net.init_weights()
     net.to(device)
 
-    optimizer = torch.optim.Adam(net.parameters(), lr=config.lr, betas=tuple(config.betas))
+    optim_class = getattr(torch.optim, config.optimizer)
+    optimizer = optim_class(net.parameters(), lr=config.lr, betas=tuple(config.betas))
 
     # Dataset part
     B: int = config.B
@@ -171,7 +189,7 @@ def runTraining(args, config: TrainConfig):
                     B, _, W, H = img.shape
 
                     pred_logits = net(img)
-                    pred_probs = F.softmax(1 * pred_logits, dim=1)  # 1 is the temperature parameter
+                    pred_probs = F.softmax(pred_logits / config.temperature, dim=1)
 
                     # Metrics computation, not used for training
                     pred_seg = probs2one_hot(pred_probs)
@@ -244,6 +262,8 @@ def main():
     with open(args.config, 'r') as file:
         yaml_config = yaml.safe_load(file)
     config = TrainConfig(**yaml_config)
+
+    set_seed(config.seed)
 
     print("Parsed arguments:")
     pprint(vars(args))
