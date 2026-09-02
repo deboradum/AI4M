@@ -167,6 +167,13 @@ def runTraining(args, config: TrainConfig):
     log_rec_tra: Tensor = torch.zeros((config.epochs, len(train_loader.dataset), K))
     log_rec_val: Tensor = torch.zeros((config.epochs, len(val_loader.dataset), K))
 
+    # Whether each class is present in the GT of each slice. The per-slice metrics
+    # above score 1.0 when a class is absent from both GT and prediction, which
+    # inflates them a lot (an organ is absent from most slices). Used to also
+    # report the metrics restricted to slices that actually contain the organ.
+    log_present_tra: Tensor = torch.zeros((config.epochs, len(train_loader.dataset), K), dtype=torch.bool)
+    log_present_val: Tensor = torch.zeros((config.epochs, len(val_loader.dataset), K), dtype=torch.bool)
+
     best_dice: float = 0
     epochs_without_improvement: int = 0
 
@@ -184,6 +191,7 @@ def runTraining(args, config: TrainConfig):
                     log_iou = log_iou_tra
                     log_prec = log_prec_tra
                     log_rec = log_rec_tra
+                    log_present = log_present_tra
                 case 'val':
                     net.eval()
                     opt = None
@@ -195,6 +203,7 @@ def runTraining(args, config: TrainConfig):
                     log_iou = log_iou_val
                     log_prec = log_prec_val
                     log_rec = log_rec_val
+                    log_present = log_present_val
 
             with cm():  # Either dummy context manager, or the torch.no_grad for validation
                 j = 0
@@ -219,6 +228,7 @@ def runTraining(args, config: TrainConfig):
                     log_iou[e, j:j + B, :] = iou_coef(pred_seg, gt)
                     log_prec[e, j:j + B, :] = precision_coef(pred_seg, gt)
                     log_rec[e, j:j + B, :] = recall_coef(pred_seg, gt)
+                    log_present[e, j:j + B, :] = gt.sum(dim=(2, 3)) > 0
 
                     loss = loss_fn(pred_probs, gt)
                     log_loss[e, i] = loss.item()  # One loss value per batch (averaged in the loss)
@@ -265,6 +275,8 @@ def runTraining(args, config: TrainConfig):
         np.save(args.dest / "prec_val.npy", log_prec_val)
         np.save(args.dest / "rec_tra.npy", log_rec_tra)
         np.save(args.dest / "rec_val.npy", log_rec_val)
+        np.save(args.dest / "present_tra.npy", log_present_tra)
+        np.save(args.dest / "present_val.npy", log_present_val)
 
         current_dice: float = log_dice_val[e, :, 1:].mean().item()
         current_iou: float = log_iou_val[e, :, 1:].mean().item()
@@ -276,9 +288,13 @@ def runTraining(args, config: TrainConfig):
 
             message = f">>> Improved dice at epoch {e}: {best_dice:05.3f}->{current_dice:05.3f} DSC | IoU: {current_iou:05.3f} | Prec: {current_prec:05.3f} | Rec: {current_rec:05.3f}\n"
             if K > 2:
-                message += "Per-Organ Breakdown:\n"
+                message += "Per-Organ Breakdown (all slices | slices containing the organ):\n"
                 for k in range(1, K):
-                    message += f"  - Organ {k}: Dice = {log_dice_val[e, :, k].mean().item():05.3f}, IoU = {log_iou_val[e, :, k].mean().item():05.3f}, Prec = {log_prec_val[e, :, k].mean().item():05.3f}, Rec = {log_rec_val[e, :, k].mean().item():05.3f}\n"
+                    present = log_present_val[e, :, k]
+                    dice_present = log_dice_val[e, present, k].mean().item() if present.any() else float('nan')
+                    message += (f"  - Organ {k}: Dice = {log_dice_val[e, :, k].mean().item():05.3f} | {dice_present:.3f} "
+                                f"({int(present.sum())}/{len(present)} slices), "
+                                f"IoU = {log_iou_val[e, :, k].mean().item():05.3f}, Prec = {log_prec_val[e, :, k].mean().item():05.3f}, Rec = {log_rec_val[e, :, k].mean().item():05.3f}\n")
 
             print(message.strip())
             best_dice = current_dice
