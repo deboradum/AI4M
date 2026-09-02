@@ -22,6 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import yaml
 import argparse
 import warnings
 from typing import Any
@@ -52,12 +53,7 @@ from utils import (Dcm,
 
 from losses import (CrossEntropy)
 
-datasets_params: dict[str, dict[str, Any]] = {}
-# K for the number of classes
-# Avoids the classes with C (often used for the number of Channel)
-datasets_params["TOY2"] = {'K': 2, 'net': shallowCNN, 'B': 2, 'kernels': 8, 'factor': 2}
-datasets_params["SEGTHOR"] = {'K': 5, 'net': ENet, 'B': 8, 'kernels': 8, 'factor': 2}
-datasets_params["SEGTHOR_CLEAN"] = {'K': 5, 'net': ENet, 'B': 8, 'kernels': 8, 'factor': 2}
+from configType import TrainConfig, NETWORKS
 
 def img_transform(img):
         img = img.convert('L')
@@ -77,28 +73,24 @@ def gt_transform(K, img):
         img = class2one_hot(img, K=K)
         return img[0]
 
-def setup(args) -> tuple[nn.Module, Any, Any, DataLoader, DataLoader, int]:
+def setup(args, config: TrainConfig) -> tuple[nn.Module, Any, Any, DataLoader, DataLoader, int]:
     # Networks and scheduler
     gpu: bool = args.gpu and torch.cuda.is_available()
     mps: bool = args.mps and torch.mps.is_available()
     device = torch.device("cuda") if gpu else torch.device("mps") if mps else torch.device("cpu")
     print(f">> Picked {device} to run experiments")
 
-    K: int = datasets_params[args.dataset]['K']
-    kernels: int = datasets_params[args.dataset]['kernels'] if 'kernels' in datasets_params[args.dataset] else 8
-    factor: int = datasets_params[args.dataset]['factor'] if 'factor' in datasets_params[args.dataset] else 2
-    net = datasets_params[args.dataset]['net'](1, K, kernels=kernels, factor=factor)
+    K: int = config.K
+    net_class = NETWORKS[config.net_name]
+    net = net_class(1, K, kernels=config.kernels, factor=config.factor)
     net.init_weights()
     net.to(device)
 
-    lr = 0.0005
-    optimizer = torch.optim.Adam(net.parameters(), lr=lr, betas=(0.9, 0.999))
+    optimizer = torch.optim.Adam(net.parameters(), lr=config.lr, betas=tuple(config.betas))
 
     # Dataset part
-    B: int = datasets_params[args.dataset]['B']
-    root_dir = Path("data") / args.dataset
-
-
+    B: int = config.B
+    root_dir = Path("data") / config.dataset
 
     train_set = SliceDataset('train',
                              root_dir,
@@ -107,7 +99,7 @@ def setup(args) -> tuple[nn.Module, Any, Any, DataLoader, DataLoader, int]:
                              debug=args.debug)
     train_loader = DataLoader(train_set,
                               batch_size=B,
-                              num_workers=5,
+                              num_workers=config.num_workers,
                               shuffle=True)
 
     val_set = SliceDataset('val',
@@ -117,7 +109,7 @@ def setup(args) -> tuple[nn.Module, Any, Any, DataLoader, DataLoader, int]:
                            debug=args.debug)
     val_loader = DataLoader(val_set,
                             batch_size=B,
-                            num_workers=5,
+                            num_workers=config.num_workers,
                             shuffle=False)
 
     args.dest.mkdir(parents=True, exist_ok=True)
@@ -125,26 +117,26 @@ def setup(args) -> tuple[nn.Module, Any, Any, DataLoader, DataLoader, int]:
     return (net, optimizer, device, train_loader, val_loader, K)
 
 
-def runTraining(args):
-    print(f">>> Setting up to train on {args.dataset} with {args.mode}")
-    net, optimizer, device, train_loader, val_loader, K = setup(args)
+def runTraining(args, config: TrainConfig):
+    print(f">>> Setting up to train on {config.dataset} with {config.mode}")
+    net, optimizer, device, train_loader, val_loader, K = setup(args, config)
 
-    if args.mode == "full":
-        loss_fn = CrossEntropy(idk=list(range(K)))  # Supervise both background and foreground
-    elif args.mode in ["partial"] and args.dataset == 'SEGTHOR':
-        loss_fn = CrossEntropy(idk=[0, 1, 3, 4])  # Do not supervise the heart (class 2)
+    if config.mode == "full":
+        loss_fn = CrossEntropy(idk=list(range(K)))
+    elif config.mode in ["partial"] and config.dataset == 'SEGTHOR':
+        loss_fn = CrossEntropy(idk=[0, 1, 3, 4])
     else:
-        raise ValueError(args.mode, args.dataset)
+        raise ValueError(config.mode, config.dataset)
 
     # Notice one has the length of the _loader_, and the other one of the _dataset_
-    log_loss_tra: Tensor = torch.zeros((args.epochs, len(train_loader)))
-    log_dice_tra: Tensor = torch.zeros((args.epochs, len(train_loader.dataset), K))
-    log_loss_val: Tensor = torch.zeros((args.epochs, len(val_loader)))
-    log_dice_val: Tensor = torch.zeros((args.epochs, len(val_loader.dataset), K))
+    log_loss_tra: Tensor = torch.zeros((config.epochs, len(train_loader)))
+    log_dice_tra: Tensor = torch.zeros((config.epochs, len(train_loader.dataset), K))
+    log_loss_val: Tensor = torch.zeros((config.epochs, len(val_loader)))
+    log_dice_val: Tensor = torch.zeros((config.epochs, len(val_loader.dataset), K))
 
     best_dice: float = 0
 
-    for e in range(args.epochs):
+    for e in range(config.epochs):
         for m in ['train', 'val']:
             match m:
                 case 'train':
@@ -236,9 +228,8 @@ def runTraining(args):
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--epochs', default=20, type=int)
-    parser.add_argument('--dataset', default='TOY2', choices=datasets_params.keys())
-    parser.add_argument('--mode', default='full', choices=['partial', 'full'])
+    parser.add_argument('--config', type=Path, required=True,
+                        help="Path to the YAML configuration file.")
     parser.add_argument('--dest', type=Path, required=True,
                         help="Destination directory to save the results (predictions and weights).")
 
@@ -250,10 +241,20 @@ def main():
 
     args = parser.parse_args()
 
-    pprint(args)
+    with open(args.config, 'r') as file:
+        yaml_config = yaml.safe_load(file)
+    config = TrainConfig(**yaml_config)
 
-    runTraining(args)
+    print("Parsed arguments:")
+    pprint(vars(args))
+
+    print("\nLoaded Configuration:")
+    pprint(yaml_config)
+
+    runTraining(args, config)
 
 
 if __name__ == '__main__':
     main()
+
+# python -O main.py --config configs/TOY2_default_config.yaml --dest results/toy2/ce_with_cfg --mps
