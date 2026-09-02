@@ -328,6 +328,10 @@ def main():
     print("\nLoaded Configuration:")
     pprint(yaml_config)
 
+    args.dest.mkdir(parents=True, exist_ok=True)
+    with open(args.dest / 'config_dump.yaml', 'w') as f:
+        yaml.dump(yaml_config, f, default_flow_style=False, sort_keys=False)
+
     runTraining(args, config)
 
 
