@@ -1,0 +1,45 @@
+{
+  "exp_id": "E001",
+  "parent_id": "E000",
+  "status": "planned",
+  "runtime_config": "configs/E001_baseline.yaml",
+  "runtime_results": "results/E001_baseline",
+  "runtime_volumes": "volumes/E001_baseline",
+  "change": "Reproducible single-slice baseline",
+  "hypothesis": "A fixed seed provides a stable parent experiment for isolated ablations.",
+  "dataset": {
+    "name": "SEGTHOR",
+    "source": "segthor_part1",
+    "split": {
+      "training_patients": 15,
+      "validation_patients": 5,
+      "retains": 5,
+      "seed": 0,
+      "fold": 0
+    },
+    "resolution": [256, 256],
+    "classes": ["background", "esophagus", "heart", "trachea", "aorta"]
+  },
+  "model": {
+    "name": "ENet",
+    "kernels": 8,
+    "factor": 2,
+    "in_slices": 1
+  },
+  "training": {
+    "mode": "full",
+    "loss": "CrossEntropy",
+    "optimizer": "Adam",
+    "learning_rate": 0.0005,
+    "betas": [0.9, 0.999],
+    "batch_size": 8,
+    "epochs": 25,
+    "temperature": 1.0,
+    "patience": -1,
+    "seed": 123,
+    "scheduler": null,
+    "augmentation": false
+  },
+  "git_commit": null,
+  "git_commit_note": "Set this to `git rev-parse HEAD` on the clean branch immediately before training; main.py also records it in results/E001_baseline/stats.json."
+}

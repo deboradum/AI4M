@@ -1,0 +1,47 @@
+{
+  "exp_id": "E008",
+  "parent_id": "E001",
+  "status": "planned",
+  "runtime_config": "configs/E008_25d.yaml",
+  "runtime_results": "results/E008_25d",
+  "runtime_volumes": "volumes/E008_25d",
+  "change": "Use [z-1, z, z+1] as three input channels while predicting the mask for z.",
+  "hypothesis": "Adjacent axial slices provide longitudinal context that improves trachea and possibly esophagus segmentation.",
+  "dataset": {
+    "name": "SEGTHOR",
+    "source": "segthor_part1",
+    "split": {
+      "training_patients": 15,
+      "validation_patients": 5,
+      "retains": 5,
+      "seed": 0,
+      "fold": 0
+    },
+    "resolution": [256, 256],
+    "classes": ["background", "esophagus", "heart", "trachea", "aorta"]
+  },
+  "model": {
+    "name": "ENet",
+    "kernels": 8,
+    "factor": 2,
+    "in_slices": 3,
+    "input_order": ["z-1", "z", "z+1"],
+    "boundary_policy": "replicate the centre slice at the first and last z-index"
+  },
+  "training": {
+    "mode": "full",
+    "loss": "CrossEntropy",
+    "optimizer": "Adam",
+    "learning_rate": 0.0005,
+    "betas": [0.9, 0.999],
+    "batch_size": 8,
+    "epochs": 25,
+    "temperature": 1.0,
+    "patience": -1,
+    "seed": 123,
+    "scheduler": null,
+    "augmentation": false
+  },
+  "git_commit": null,
+  "git_commit_note": "Set this to `git rev-parse HEAD` on the clean branch immediately before training; main.py also records it in results/E008_25d/stats.json."
+}
