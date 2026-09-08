@@ -1,5 +1,6 @@
 from ShallowNet import shallowCNN
 from ENet import ENet
+from UNet import UNet
 
 from dataclasses import dataclass
 from typing import Tuple
@@ -30,5 +31,6 @@ class TrainConfig:
 
 NETWORKS = {
     'shallowCNN': shallowCNN,
-    'ENet': ENet
+    'ENet': ENet,
+    'UNet': UNet,
 }
