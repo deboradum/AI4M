@@ -1,7 +1,7 @@
 {
   "exp_id": "E008",
   "parent_id": "E001",
-  "status": "planned",
+  "status": "complete",
   "runtime_config": "configs/E008_25d.yaml",
   "runtime_results": "results/E008_25d",
   "runtime_volumes": "volumes/E008_25d",
@@ -42,6 +42,63 @@
     "scheduler": null,
     "augmentation": false
   },
-  "git_commit": null,
-  "git_commit_note": "Set this to `git rev-parse HEAD` on the clean branch immediately before training; main.py also records it in results/E008_25d/stats.json."
+  "git_commit": "b859009",
+  "results": {
+    "epochs_completed": 25,
+    "best_epoch_by_validation_dice": 24,
+    "training": {
+      "total_minutes": 21.95,
+      "seconds_per_epoch": 41.35,
+      "peak_gpu_memory_mb": 814.7,
+      "parameter_count": 284073
+    },
+    "inference": {
+      "seconds_per_patient": 1.959,
+      "validation_patients": 5
+    },
+    "metrics_3d": {
+      "dice_mean": {
+        "esophagus": 0.508,
+        "heart": 0.705,
+        "trachea": 0.245,
+        "aorta": null,
+        "foreground_mean": 0.486
+      },
+      "hd95_mm_mean": {
+        "esophagus": 34.179,
+        "heart": 40.482,
+        "trachea": 43.294,
+        "aorta": null
+      },
+      "assd_mm_mean": {
+        "esophagus": 7.005,
+        "heart": 10.837,
+        "trachea": 9.814,
+        "aorta": null
+      },
+      "nsd_mean": {
+        "esophagus": 0.318,
+        "heart": 0.216,
+        "trachea": 0.163,
+        "aorta": null
+      }
+    },
+    "comparison_to_parent": {
+      "foreground_mean_dice_delta": -0.112,
+      "dice_delta": {
+        "esophagus": -0.102,
+        "heart": -0.103,
+        "trachea": -0.132
+      },
+      "interpretation": "This single controlled 2.5D run underperformed the E001 single-slice baseline."
+    },
+    "notes": [
+      "The E008 trachea prediction is empty for Patient_19; its Dice and NSD are 0, while HD95 and ASSD are undefined and excluded from their means.",
+      "Aorta is absent from segthor_part1 and is not evaluable."
+    ],
+    "artifacts": {
+      "metrics_3d": "results/E008_25d/metrics3d/metrics.csv",
+      "prediction_volumes": "volumes/E008_25d/nii/"
+    }
+  }
 }
