@@ -1,7 +1,7 @@
 {
   "exp_id": "E001",
   "parent_id": "E000",
-  "status": "planned",
+  "status": "complete",
   "runtime_config": "configs/E001_baseline.yaml",
   "runtime_results": "results/E001_baseline",
   "runtime_volumes": "volumes/E001_baseline",
@@ -40,6 +40,50 @@
     "scheduler": null,
     "augmentation": false
   },
-  "git_commit": null,
-  "git_commit_note": "Set this to `git rev-parse HEAD` on the clean branch immediately before training; main.py also records it in results/E001_baseline/stats.json."
+  "git_commit": "617e3f1",
+  "results": {
+    "epochs_completed": 25,
+    "best_epoch_by_validation_dice": 23,
+    "training": {
+      "total_minutes": 21.4,
+      "seconds_per_epoch": 40.2,
+      "peak_gpu_memory_mb": 810.7,
+      "parameter_count": 284003
+    },
+    "inference": {
+      "seconds_per_patient": 1.802,
+      "validation_patients": 5
+    },
+    "metrics_3d": {
+      "dice_mean": {
+        "esophagus": 0.610,
+        "heart": 0.808,
+        "trachea": 0.377,
+        "aorta": null,
+        "foreground_mean": 0.598
+      },
+      "hd95_mm_mean": {
+        "esophagus": 29.942,
+        "heart": 49.341,
+        "trachea": 50.146,
+        "aorta": null
+      },
+      "assd_mm_mean": {
+        "esophagus": 5.780,
+        "heart": 8.845,
+        "trachea": 15.684,
+        "aorta": null
+      },
+      "nsd_mean": {
+        "esophagus": 0.365,
+        "heart": 0.259,
+        "trachea": 0.260,
+        "aorta": null
+      }
+    },
+    "artifacts": {
+      "metrics_3d": "results/E001_baseline/metrics3d/metrics.csv",
+      "prediction_volumes": "volumes/E001_baseline/nii/"
+    }
+  }
 }
