@@ -1,0 +1,52 @@
+{
+  "exp_id": "E010_unet2d",
+  "parent_id": "E001",
+  "status": "planned",
+  "runtime_config": "configs/E010_unet2d.yaml",
+  "runtime_results": "results/E010_unet2d",
+  "runtime_volumes": "volumes/E010_unet2d",
+  "change": "Replace E001 ENet with a plain 2D U-Net while preserving the E001 protocol.",
+  "hypothesis": "A conventional encoder-decoder with skip connections improves segmentation under the fixed E001 protocol, or otherwise reveals a compute/overfitting trade-off.",
+  "dataset": {
+    "name": "SEGTHOR",
+    "source": "segthor_part1",
+    "split": {
+      "training_patients": 15,
+      "validation_patients": 5,
+      "retains": 5,
+      "seed": 0,
+      "fold": 0
+    },
+    "resolution": [256, 256],
+    "classes": ["background", "esophagus", "heart", "trachea", "aorta"]
+  },
+  "model": {
+    "name": "UNet",
+    "base_channels": 32,
+    "levels": 4,
+    "encoder_channels": [32, 64, 128, 256],
+    "bottleneck_channels": 512,
+    "normalization": "BatchNorm2d",
+    "activation": "PReLU",
+    "downsampling": "2x2 MaxPool2d",
+    "upsampling": "2x2 ConvTranspose2d",
+    "in_slices": 1,
+    "parameter_count": 7762135
+  },
+  "training": {
+    "mode": "full",
+    "loss": "CrossEntropy",
+    "optimizer": "Adam",
+    "learning_rate": 0.0005,
+    "betas": [0.9, 0.999],
+    "batch_size": 8,
+    "epochs": 25,
+    "temperature": 1.0,
+    "patience": -1,
+    "seed": 123,
+    "scheduler": null,
+    "augmentation": false
+  },
+  "git_commit": null,
+  "git_commit_note": "Set this to the clean-branch commit immediately before training; main.py also records it in results/E010_unet2d/stats.json."
+}
