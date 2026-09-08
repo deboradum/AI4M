@@ -10,11 +10,16 @@ before a multi-hour training job is launched.
 import argparse
 from functools import partial
 from pathlib import Path
+import sys
 
 import torch
 import torch.nn.functional as F
 import yaml
 from torch.utils.data import DataLoader
+
+# When invoked as ``python scripts/preflight_segthor.py``, Python otherwise
+# searches scripts/ rather than the repository root containing these modules.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from configType import TrainConfig, NETWORKS
 from dataset import SliceDataset
