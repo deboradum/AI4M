@@ -105,7 +105,7 @@ def setup(args, config: TrainConfig) -> tuple[nn.Module, Any, Any, DataLoader, D
 
     K: int = config.K
     net_class = NETWORKS[config.net_name]
-    net = net_class(1, K, kernels=config.kernels, factor=config.factor)
+    net = net_class(config.in_slices, K, kernels=config.kernels, factor=config.factor)
     net.init_weights()
     net.to(device)
 
@@ -120,6 +120,7 @@ def setup(args, config: TrainConfig) -> tuple[nn.Module, Any, Any, DataLoader, D
                              root_dir,
                              img_transform=img_transform,
                              gt_transform= partial(gt_transform, K),
+                             in_slices=config.in_slices,
                              debug=args.debug)
     train_loader = DataLoader(train_set,
                               batch_size=B,
@@ -130,6 +131,7 @@ def setup(args, config: TrainConfig) -> tuple[nn.Module, Any, Any, DataLoader, D
                            root_dir,
                            img_transform=img_transform,
                            gt_transform=partial(gt_transform, K),
+                           in_slices=config.in_slices,
                            debug=args.debug)
     val_loader = DataLoader(val_set,
                             batch_size=B,
