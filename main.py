@@ -52,6 +52,7 @@ from utils import (Dcm,
                    dice_coef,
                    save_images)
 
+from losses import FocalLoss, WeightedCrossEntropy, CEDiceLoss, WeightedFocalLoss, FocalDiceLoss, WeightedCEDiceLoss
 from losses import (CrossEntropy)
 
 from configType import TrainConfig, NETWORKS
@@ -146,11 +147,28 @@ def runTraining(args, config: TrainConfig):
     net, optimizer, device, train_loader, val_loader, K = setup(args, config)
 
     if config.mode == "full":
-        loss_fn = CrossEntropy(idk=list(range(K)))
-    elif config.mode in ["partial"] and config.dataset == 'SEGTHOR':
-        loss_fn = CrossEntropy(idk=[0, 1, 3, 4])
+        target_classes = list(range(K))
+    elif config.mode == "partial" and config.dataset == 'SEGTHOR':
+        target_classes = [0, 1, 3, 4]
     else:
-        raise ValueError(config.mode, config.dataset)
+        raise ValueError(f"Unsupported mode '{config.mode}' for dataset '{config.dataset}'")
+
+    if config.loss_fn == "ce":
+        loss_fn = CrossEntropy(idk=target_classes)
+    elif config.loss_fn == "weighted_ce":
+        loss_fn = WeightedCrossEntropy(idk=target_classes, class_weights=config.class_weights)
+    elif config.loss_fn == "ce_dice":
+        loss_fn = CEDiceLoss(idk=target_classes)
+    elif config.loss_fn == "weighted_ce_dice":
+        loss_fn = WeightedCEDiceLoss(idk=target_classes, class_weights=config.class_weights)
+    elif config.loss_fn == "focal":
+        loss_fn = FocalLoss(idk=target_classes, focal_gamma=config.focal_gamma)
+    elif config.loss_fn == "weighted_focal":
+        loss_fn = WeightedFocalLoss(idk=target_classes, focal_gamma=config.focal_gamma, class_weights=config.class_weights)
+    elif config.loss_fn == "focal_dice":
+        loss_fn = FocalDiceLoss(idk=target_classes, focal_gamma=config.focal_gamma)
+    else:
+        raise Exception(f"'config.loss_fn' must be 'ce', 'focal', 'weighted_ce', or 'ce_dice'. Got '{config.loss_fn}'")
 
     # Notice one has the length of the _loader_, and the other one of the _dataset_
     log_loss_tra: Tensor = torch.zeros((config.epochs, len(train_loader)))
