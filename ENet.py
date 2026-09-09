@@ -177,6 +177,7 @@ class ENet(nn.Module):
                 super().__init__()
                 F: int = kwargs["factor"] if "factor" in kwargs else 4  # Projecting factor
                 K: int = kwargs["kernels"] if "kernels" in kwargs else 16  # n_kernels
+                assert K > in_dim, f"ENet requires kernels ({K}) > input channels ({in_dim})"
 
                 # from models.enet import (BottleNeck,
                 #                          BottleNeckDownSampling,
@@ -184,7 +185,10 @@ class ENet(nn.Module):
                 #                          conv_block)
 
                 # Initial operations
-                self.conv0 = nn.Conv2d(in_dim, K - 1, kernel_size=3, stride=2, padding=1)
+                # The max-pooling branch retains in_dim channels. Choose the
+                # convolution branch width so their concatenation always has
+                # K channels (the original in_dim=1 case remains K-1 + 1).
+                self.conv0 = nn.Conv2d(in_dim, K - in_dim, kernel_size=3, stride=2, padding=1)
                 self.maxpool0 = nn.MaxPool2d(2, return_indices=False, ceil_mode=False)
 
                 # Downsampling half

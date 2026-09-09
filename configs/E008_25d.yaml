@@ -1,0 +1,18 @@
+# E008: 2.5D ablation of E001. Each prediction for z receives [z-1, z, z+1].
+# Keep the same patient split, seed, and all optimization settings as E001.
+dataset: "SEGTHOR"
+mode: "full"
+K: 5
+net_name: "ENet"
+B: 8
+kernels: 8
+factor: 2
+lr: 0.0005
+betas: [0.9, 0.999]
+epochs: 25
+num_workers: 5
+temperature: 1.0
+optimizer: "Adam"
+seed: 123
+patience: -1
+in_slices: 3
