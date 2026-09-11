@@ -1,0 +1,52 @@
+{
+  "exp_id": "E014_hu_wide",
+  "parent_id": "E001",
+  "status": "registered",
+  "runtime_config": "configs/E014_hu_wide.yaml",
+  "runtime_results": "results/E014_hu_wide",
+  "runtime_volumes": "volumes/E014_hu_wide",
+  "change": "Reslice with a fixed HU window [-1000, 1000] (clip then fixed-range normalization) instead of the per-patient global min-max.",
+  "hypothesis": "A fixed physical window gives every patient the same contrast; the esophagus (soft tissue) is no longer crushed against a 3071 HU implant outlier. Expect esophagus Dice to improve; heart and trachea roughly unchanged.",
+  "plan_reference": "full_plan.md item 1.4",
+  "dataset": {
+    "name": "SEGTHOR_huwide",
+    "source": "segthor_part1",
+    "slicing": "slice_segthor.py --window -1000 1000",
+    "split": {
+      "training_patients": 15,
+      "validation_patients": 5,
+      "retains": 5,
+      "seed": 0,
+      "fold": 0
+    },
+    "resolution": [256, 256],
+    "classes": ["background", "esophagus", "heart", "trachea", "aorta"]
+  },
+  "model": {
+    "name": "ENet",
+    "kernels": 8,
+    "factor": 2,
+    "in_slices": 1
+  },
+  "training": {
+    "mode": "full",
+    "loss": "CrossEntropy",
+    "optimizer": "Adam",
+    "learning_rate": 0.0005,
+    "betas": [0.9, 0.999],
+    "batch_size": 8,
+    "epochs": 25,
+    "temperature": 1.0,
+    "patience": -1,
+    "seed": 123,
+    "scheduler": null,
+    "augmentation": false
+  },
+  "git_commit": null,
+  "results": null,
+  "what_to_check": [
+    "Esophagus 3D Dice vs E001 (0.610).",
+    "Background precision: windowing should not add false positives.",
+    "Viewer screenshot of a slice where soft-tissue contrast differs visibly."
+  ]
+}

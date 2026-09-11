@@ -1,0 +1,27 @@
+# E015_augment: augmentation ablation of E001 (plan 1.5).
+# Rotation +-15 deg, scale 0.9-1.1, intensity shift +-0.1, light elastic.
+# No horizontal flip (thorax not left-right symmetric). Same data, split,
+# seed, and optimization settings as E001; only augmentation is new.
+dataset: "SEGTHOR"
+mode: "full"
+K: 5
+net_name: "ENet"
+B: 8
+kernels: 8
+factor: 2
+lr: 0.0005
+betas: [0.9, 0.999]
+epochs: 25
+num_workers: 5
+temperature: 1.0
+optimizer: "Adam"
+seed: 123
+patience: -1
+in_slices: 1
+augment: true
+aug_rotation: 15.0
+aug_scale_min: 0.9
+aug_scale_max: 1.1
+aug_intensity: 0.1
+aug_elastic_alpha: 10.0
+aug_elastic_sigma: 4.0
