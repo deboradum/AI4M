@@ -51,6 +51,17 @@ def norm_arr(img: np.ndarray) -> np.ndarray:
     return res.astype(np.uint8)
 
 
+def norm_window(img: np.ndarray, low: float, high: float) -> np.ndarray:
+    # Fixed HU window: same contrast for every patient, unlike the per-patient
+    # min-max of norm_arr. Values outside [low, high] saturate.
+    assert low < high, (low, high)
+    casted = img.astype(np.float32)
+    clipped = np.clip(casted, low, high)
+    res = 255 * (clipped - low) / (high - low)
+
+    return res.astype(np.uint8)
+
+
 def sanity_ct(ct, x, y, z, dx, dy, dz) -> bool:
     assert ct.dtype in [np.int16, np.int32], ct.dtype
     assert -1000 <= ct.min(), ct.min()
@@ -81,7 +92,7 @@ resize_: Callable = partial(resize, mode="constant", preserve_range=True, anti_a
 
 
 def slice_patient(id_: str, dest_path: Path, source_path: Path, shape: tuple[int, int],
-                  test_mode: bool = False) -> tuple[float, float, float]:
+                  test_mode: bool = False, window: tuple[float, float] | None = None) -> tuple[float, float, float]:
     id_path: Path = source_path / ("train" if not test_mode else "test") / id_
 
     ct_path: Path = (id_path / f"{id_}.nii.gz") if not test_mode else (source_path / "test" / f"{id_}.nii.gz")
@@ -103,7 +114,7 @@ def slice_patient(id_: str, dest_path: Path, source_path: Path, shape: tuple[int
     else:
         gt = np.zeros_like(ct, dtype=np.uint8)
 
-    norm_ct: np.ndarray = norm_arr(ct)
+    norm_ct: np.ndarray = norm_window(ct, *window) if window is not None else norm_arr(ct)
 
     to_slice_ct = norm_ct
     to_slice_gt = gt
@@ -137,6 +148,7 @@ def slice_patient(id_: str, dest_path: Path, source_path: Path, shape: tuple[int
 
 def get_splits(src_path: Path, retains: int, fold: int) -> tuple[list[str], list[str], list[str]]:
     ids: list[str] = sorted(map_(lambda p: p.name, (src_path / 'train').glob('*')))
+    ids = [i for i in ids if (src_path / 'train' / i).is_dir() and not i.startswith('.')]
     print(f"Founds {len(ids)} in the id list")
     print(ids[:10])
     assert len(ids) > retains
@@ -180,7 +192,8 @@ def main(args: argparse.Namespace):
                                  dest_path=dest_mode,
                                  source_path=src_path,
                                  shape=tuple(args.shape),
-                                 test_mode=mode == 'test')
+                                 test_mode=mode == 'test',
+                                 window=tuple(args.window) if args.window else None)
         resolutions: list[tuple[float, float, float]]
         iterator = tqdm_(split_ids)
         match args.process:
@@ -210,6 +223,9 @@ def get_args() -> argparse.Namespace:
     parser.add_argument('--fold', type=int, default=0)
     parser.add_argument('--process', '-p', type=int, default=1,
                         help="The number of cores to use for processing")
+    parser.add_argument('--window', type=float, nargs=2, default=None, metavar=("LOW", "HIGH"),
+                        help="Fixed HU window [LOW, HIGH]; clips then normalizes to 0-255. "
+                             "Default: per-patient min-max (original behavior).")
     args = parser.parse_args()
     random.seed(args.seed)
 
