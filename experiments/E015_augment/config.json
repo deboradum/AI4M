@@ -1,0 +1,59 @@
+{
+  "exp_id": "E015_augment",
+  "parent_id": "E001",
+  "status": "registered",
+  "runtime_config": "configs/E015_augment.yaml",
+  "runtime_results": "results/E015_augment",
+  "runtime_volumes": "volumes/E015_augment",
+  "change": "On-the-fly augmentation of training slices: rotation +-15 deg, scale 0.9-1.1, intensity shift +-0.1, light elastic (alpha 10 px, sigma 4). No horizontal flip. One sampled geometric transform is applied identically to all input channels and the GT.",
+  "hypothesis": "Train Dice 0.95 vs val 0.82 by epoch 16 indicates overfitting on 15 patients. Augmentation should narrow the train/val gap and raise validation Dice, chiefly for esophagus and trachea.",
+  "plan_reference": "full_plan.md item 1.5",
+  "dataset": {
+    "name": "SEGTHOR",
+    "source": "segthor_part1",
+    "split": {
+      "training_patients": 15,
+      "validation_patients": 5,
+      "retains": 5,
+      "seed": 0,
+      "fold": 0
+    },
+    "resolution": [256, 256],
+    "classes": ["background", "esophagus", "heart", "trachea", "aorta"]
+  },
+  "model": {
+    "name": "ENet",
+    "kernels": 8,
+    "factor": 2,
+    "in_slices": 1
+  },
+  "training": {
+    "mode": "full",
+    "loss": "CrossEntropy",
+    "optimizer": "Adam",
+    "learning_rate": 0.0005,
+    "betas": [0.9, 0.999],
+    "batch_size": 8,
+    "epochs": 25,
+    "temperature": 1.0,
+    "patience": -1,
+    "seed": 123,
+    "scheduler": null,
+    "augmentation": {
+      "rotation_deg": 15.0,
+      "scale": [0.9, 1.1],
+      "intensity_shift": 0.1,
+      "elastic_alpha": 10.0,
+      "elastic_sigma": 4.0,
+      "horizontal_flip": false
+    }
+  },
+  "git_commit": null,
+  "results": null,
+  "what_to_check": [
+    "Train/val Dice gap vs E001 (should narrow).",
+    "Foreground mean 3D Dice vs E001 (0.598).",
+    "HD95 not worse; elastic on thin trachea could hurt.",
+    "Follow-up question from the plan: does 50 epochs with augmentation beat 25 without?"
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "exp_id": "E014_hu_soft",
+  "parent_id": "E001",
+  "status": "registered",
+  "runtime_config": "configs/E014_hu_soft.yaml",
+  "runtime_results": "results/E014_hu_soft",
+  "runtime_volumes": "volumes/E014_hu_soft",
+  "change": "Reslice with a fixed soft-tissue HU window [-200, 300] instead of the per-patient global min-max.",
+  "hypothesis": "Maximal soft-tissue contrast should help the esophagus the most of the two windows. Heart may dip slightly because global (bone/air) context is lost; trachea (air-tissue boundary) may dip because air saturates.",
+  "plan_reference": "full_plan.md item 1.4",
+  "dataset": {
+    "name": "SEGTHOR_husoft",
+    "source": "segthor_part1",
+    "slicing": "slice_segthor.py --window -200 300",
+    "split": {
+      "training_patients": 15,
+      "validation_patients": 5,
+      "retains": 5,
+      "seed": 0,
+      "fold": 0
+    },
+    "resolution": [256, 256],
+    "classes": ["background", "esophagus", "heart", "trachea", "aorta"]
+  },
+  "model": {
+    "name": "ENet",
+    "kernels": 8,
+    "factor": 2,
+    "in_slices": 1
+  },
+  "training": {
+    "mode": "full",
+    "loss": "CrossEntropy",
+    "optimizer": "Adam",
+    "learning_rate": 0.0005,
+    "betas": [0.9, 0.999],
+    "batch_size": 8,
+    "epochs": 25,
+    "temperature": 1.0,
+    "patience": -1,
+    "seed": 123,
+    "scheduler": null,
+    "augmentation": false
+  },
+  "git_commit": null,
+  "results": null,
+  "what_to_check": [
+    "Esophagus 3D Dice vs E001 (0.610) and vs E014_hu_wide.",
+    "Heart/trachea trade-off: does saturation at -200/300 HU hurt them?",
+    "HD95, not only Dice."
+  ]
+}
