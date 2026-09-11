@@ -1,0 +1,19 @@
+# E014_hu_soft: fixed soft-tissue HU window [-200, 300] ablation of E001 (plan 1.4).
+# Data resliced with slice_segthor.py --window -200 300, same split
+# (retains 5, seed 0, fold 0). All optimization settings identical to E001.
+dataset: "SEGTHOR_husoft"
+mode: "full"
+K: 5
+net_name: "ENet"
+B: 8
+kernels: 8
+factor: 2
+lr: 0.0005
+betas: [0.9, 0.999]
+epochs: 25
+num_workers: 5
+temperature: 1.0
+optimizer: "Adam"
+seed: 123
+patience: -1
+in_slices: 1
