@@ -24,12 +24,68 @@
 
 from pathlib import Path
 from collections import defaultdict
+from dataclasses import dataclass
 from typing import Callable, Union
+
+import math
 
 import torch
 from torch import Tensor
 from PIL import Image
 from torch.utils.data import Dataset
+from torchvision.transforms import InterpolationMode
+from torchvision.transforms.v2 import functional as TF
+
+from utils import class2one_hot
+
+
+@dataclass
+class AugParams:
+    # Rotation/scale ranges are sampled uniformly per slice. No horizontal
+    # flip: the thorax is not left-right symmetric.
+    rotation_deg: float = 15.0
+    scale_min: float = 0.9
+    scale_max: float = 1.1
+    intensity_shift: float = 0.1   # additive, in [0, 1] image units
+    elastic_alpha: float = 10.0    # displacement magnitude in pixels (light)
+    elastic_sigma: float = 4.0     # smoothing of the displacement field
+
+
+def _sample_elastic_displacement(shape: tuple[int, int], alpha: float, sigma: float) -> Tensor:
+    # One shared displacement field for image and GT of the same slice.
+    h, w = shape
+    field = torch.rand(1, 2, h, w) * 2 - 1
+    kernel = 2 * math.ceil(3 * sigma) + 1
+    field = TF.gaussian_blur(field, kernel_size=kernel, sigma=sigma)
+    field = field * alpha
+    return field.permute(0, 2, 3, 1)  # (1, H, W, 2) as expected by elastic_transform
+
+
+def augment_sample(img: Tensor, gt: Tensor, params: AugParams, K: int) -> tuple[Tensor, Tensor]:
+    # img: (C, H, W) float in [0, 1]; gt: (K, H, W) one-hot.
+    # Geometric transforms are identical for every input channel and the GT.
+    angle = (torch.rand(()).item() * 2 - 1) * params.rotation_deg
+    scale = params.scale_min + torch.rand(()).item() * (params.scale_max - params.scale_min)
+
+    gt_idx = gt.argmax(dim=0, keepdim=True).to(torch.float32)  # (1, H, W) class indices
+
+    img = TF.affine(img, angle=angle, translate=[0, 0], scale=scale, shear=[0, 0],
+                    interpolation=InterpolationMode.BILINEAR)
+    gt_idx = TF.affine(gt_idx, angle=angle, translate=[0, 0], scale=scale, shear=[0, 0],
+                       interpolation=InterpolationMode.NEAREST)
+
+    if params.elastic_alpha > 0:
+        displacement = _sample_elastic_displacement(tuple(img.shape[-2:]),
+                                                    params.elastic_alpha, params.elastic_sigma)
+        img = TF.elastic_transform(img, displacement, interpolation=InterpolationMode.BILINEAR)
+        gt_idx = TF.elastic_transform(gt_idx, displacement, interpolation=InterpolationMode.NEAREST)
+
+    if params.intensity_shift > 0:
+        shift = (torch.rand(()).item() * 2 - 1) * params.intensity_shift
+        img = (img + shift).clamp(0, 1)
+
+    gt_aug = class2one_hot(gt_idx.round().to(torch.int64), K=K)[0]
+    return img, gt_aug
 
 
 def slice_id(path: Path) -> tuple[str, int]:
@@ -96,11 +152,12 @@ def make_dataset(root, subset) -> list[tuple[Path, Path | None]]:
 class SliceDataset(Dataset):
     def __init__(self, subset, root_dir, img_transform=None,
                  gt_transform=None, augment=False, equalize=False, debug=False,
-                 in_slices: int = 1):
+                 in_slices: int = 1, aug_params: AugParams | None = None):
         self.root_dir: str = root_dir
         self.img_transform: Callable = img_transform
         self.gt_transform: Callable = gt_transform
         self.augmentation: bool = augment
+        self.aug_params: AugParams = aug_params if aug_params is not None else AugParams()
         self.equalize: bool = equalize
         self.in_slices: int = in_slices
 
@@ -136,6 +193,10 @@ class SliceDataset(Dataset):
             _, W, H = img.shape
             K, _, _ = gt.shape
             assert gt.shape == (K, W, H)
+
+            if self.augmentation:
+                img, gt = augment_sample(img, gt, self.aug_params, K)
+                data_dict["images"] = img
 
             data_dict["gts"] = gt
 

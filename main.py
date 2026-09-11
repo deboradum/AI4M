@@ -41,7 +41,7 @@ from torch.utils.data import DataLoader
 
 from functools import partial
 
-from dataset import SliceDataset
+from dataset import SliceDataset, AugParams
 from ShallowNet import shallowCNN
 from ENet import ENet
 from utils import (Dcm,
@@ -116,10 +116,18 @@ def setup(args, config: TrainConfig) -> tuple[nn.Module, Any, Any, DataLoader, D
     B: int = config.B
     root_dir = Path("data") / config.dataset
 
+    aug_params = AugParams(rotation_deg=config.aug_rotation,
+                           scale_min=config.aug_scale_min,
+                           scale_max=config.aug_scale_max,
+                           intensity_shift=config.aug_intensity,
+                           elastic_alpha=config.aug_elastic_alpha,
+                           elastic_sigma=config.aug_elastic_sigma)
     train_set = SliceDataset('train',
                              root_dir,
                              img_transform=img_transform,
                              gt_transform= partial(gt_transform, K),
+                             augment=config.augment,
+                             aug_params=aug_params,
                              in_slices=config.in_slices,
                              debug=args.debug)
     train_loader = DataLoader(train_set,
@@ -240,7 +248,7 @@ def runTraining(args, config: TrainConfig):
                     log_iou[e, j:j + B, :] = iou_coef(pred_seg, gt)
                     log_prec[e, j:j + B, :] = precision_coef(pred_seg, gt)
                     log_rec[e, j:j + B, :] = recall_coef(pred_seg, gt)
-                    log_present[e, j:j + B, :] = gt.sum(dim=(2, 3)) > 0
+                    log_present[e, j:j + B, :] = (gt.sum(dim=(2, 3)) > 0).cpu()
 
                     loss = loss_fn(pred_probs, gt)
                     log_loss[e, i] = loss.item()  # One loss value per batch (averaged in the loss)
