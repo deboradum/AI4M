@@ -42,8 +42,65 @@
     "scheduler": null,
     "augmentation": false
   },
-  "git_commit": null,
-  "results": null,
+  "git_commit": "d9f646d",
+  "results": {
+    "epochs_completed": 25,
+    "best_epoch_by_validation_dice": 24,
+    "training": {
+      "total_minutes": 42.9,
+      "device": "mps (Apple silicon, local)",
+      "parameter_count": 284003
+    },
+    "inference": {
+      "seconds_per_patient": 10.01,
+      "device": "cpu",
+      "validation_patients": 5
+    },
+    "metrics_3d": {
+      "dice_mean": {
+        "esophagus": 0.684,
+        "heart": 0.872,
+        "trachea": 0.614,
+        "aorta": null,
+        "foreground_mean": 0.724
+      },
+      "hd95_mm_mean": {
+        "esophagus": 15.83,
+        "heart": 23.95,
+        "trachea": 39.16,
+        "aorta": null
+      },
+      "assd_mm_mean": {
+        "esophagus": 3.92,
+        "heart": 5.52,
+        "trachea": 5.56,
+        "aorta": null
+      },
+      "nsd_mean": {
+        "esophagus": 0.482,
+        "heart": 0.396,
+        "trachea": 0.491,
+        "aorta": null
+      }
+    },
+    "comparison_to_parent": {
+      "foreground_mean_dice_delta": 0.126,
+      "dice_delta": {
+        "esophagus": 0.074,
+        "heart": 0.064,
+        "trachea": 0.237
+      },
+      "interpretation": "Hypothesis confirmed: the soft-tissue window gives the best esophagus of the three runs (0.684 > 0.673 wide > 0.610 E001). Trachea dips vs the wide window (0.614 < 0.653), consistent with air saturating at -200 HU. Wide window wins on foreground mean (0.737 vs 0.724)."
+    },
+    "notes": [
+      "Run locally on MPS; E001 reference was computed on Snellius (CUDA). Same seed/config.",
+      "Aorta absent from segthor_part1, reported as n/a."
+    ],
+    "artifacts": {
+      "metrics_3d": "results/E014_hu_soft/metrics3d/metrics.csv",
+      "prediction_volumes": "volumes/E014_hu_soft/nii/"
+    }
+  },
   "what_to_check": [
     "Esophagus 3D Dice vs E001 (0.610) and vs E014_hu_wide.",
     "Heart/trachea trade-off: does saturation at -200/300 HU hurt them?",
