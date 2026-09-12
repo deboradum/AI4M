@@ -1,0 +1,31 @@
+# E016_aug_noelastic: augmentation ablation of E001 (follow-up to E015).
+# Same augmentation as E015 (rotation +-15 deg, scale 0.9-1.1, intensity
+# shift +-0.1) but WITHOUT the elastic term (elastic_alpha: 0), and 50 epochs.
+# Rationale: E015's elastic term destroyed the thin trachea (3D Dice 0.081 vs
+# E001 0.377) while heart (0.883) and esophagus (0.640) improved. Removing
+# elastic should recover trachea while keeping the heart/esophagus gains.
+# No horizontal flip (thorax not left-right symmetric). Same data, split,
+# seed, and optimization settings as E001; only augmentation is new.
+dataset: "SEGTHOR"
+mode: "full"
+K: 5
+net_name: "ENet"
+B: 8
+kernels: 8
+factor: 2
+lr: 0.0005
+betas: [0.9, 0.999]
+epochs: 50
+num_workers: 0
+temperature: 1.0
+optimizer: "Adam"
+seed: 123
+patience: -1
+in_slices: 1
+augment: true
+aug_rotation: 15.0
+aug_scale_min: 0.9
+aug_scale_max: 1.1
+aug_intensity: 0.1
+aug_elastic_alpha: 0.0
+aug_elastic_sigma: 4.0
