@@ -1,7 +1,7 @@
 {
   "exp_id": "E015_augment",
   "parent_id": "E001",
-  "status": "registered",
+  "status": "complete",
   "runtime_config": "configs/E015_augment.yaml",
   "runtime_results": "results/E015_augment",
   "runtime_volumes": "volumes/E015_augment",
@@ -35,25 +35,83 @@
     "betas": [0.9, 0.999],
     "batch_size": 8,
     "epochs": 25,
-    "temperature": 1.0,
+    "temperature": 1,
     "patience": -1,
     "seed": 123,
     "scheduler": null,
     "augmentation": {
-      "rotation_deg": 15.0,
+      "rotation_deg": 15,
       "scale": [0.9, 1.1],
       "intensity_shift": 0.1,
-      "elastic_alpha": 10.0,
-      "elastic_sigma": 4.0,
+      "elastic_alpha": 10,
+      "elastic_sigma": 4,
       "horizontal_flip": false
     }
   },
   "git_commit": null,
-  "results": null,
+  "results": {
+    "epochs_completed": 25,
+    "best_epoch_by_validation_dice": 24,
+    "training": {
+      "total_minutes": 60.3,
+      "device": "mps (Apple silicon, local)",
+      "parameter_count": 284003
+    },
+    "inference": {
+      "seconds_per_patient": 4.68,
+      "device": "cpu",
+      "validation_patients": 5
+    },
+    "metrics_3d": {
+      "dice_mean": {
+        "esophagus": 0.640,
+        "heart": 0.883,
+        "trachea": 0.081,
+        "aorta": null,
+        "foreground_mean": 0.534
+      },
+      "hd95_mm_mean": {
+        "esophagus": 19.99,
+        "heart": 49.80,
+        "trachea": 57.28,
+        "aorta": null
+      },
+      "assd_mm_mean": {
+        "esophagus": 4.63,
+        "heart": 10.05,
+        "trachea": 25.59,
+        "aorta": null
+      },
+      "nsd_mean": {
+        "esophagus": 0.380,
+        "heart": 0.391,
+        "trachea": 0.025,
+        "aorta": null
+      }
+    },
+    "comparison_to_parent": {
+      "foreground_mean_dice_delta": -0.064,
+      "dice_delta": {
+        "esophagus": 0.030,
+        "heart": 0.075,
+        "trachea": -0.296
+      },
+      "interpretation": "Augmentation narrowed the train/val gap (val present-only 0.506/0.838/0.089 vs train 0.628/0.851/0.023 at epoch 24; E014 no-aug gap was ~0.21/0.16/0.18) and improved heart (+0.075) and slightly esophagus (+0.030) over E001, but trachea collapsed (-0.296, 0.081 vs 0.377) and foreground mean fell below E001 (0.534 vs 0.598): the elastic term destroys the thin trachea."
+    },
+    "notes": [
+      "Run locally on MPS after a DataLoader shared-memory crash at epoch 4; retrained with num_workers=0 (throughput-only change).",
+      "Elastic augmentation was mis-scaled (alpha applied in normalized grid units -> up to ~600 px warp on 512 px images), suppressing all organ learning in the first completed run; fixed _sample_elastic_displacement to pixel units and retrained. Validated by a 5-epoch A/B (heart val present-only 0.535 vs 0.618 no-aug at e4).",
+      "Aorta absent from segthor_part1, reported as n/a."
+    ],
+    "artifacts": {
+      "metrics_3d": "results/E015_augment/metrics3d/metrics.csv",
+      "prediction_volumes": "volumes/E015_augment/nii/"
+    }
+  },
   "what_to_check": [
-    "Train/val Dice gap vs E001 (should narrow).",
-    "Foreground mean 3D Dice vs E001 (0.598).",
-    "HD95 not worse; elastic on thin trachea could hurt.",
-    "Follow-up question from the plan: does 50 epochs with augmentation beat 25 without?"
+    "Train/val Dice gap vs E001 (should narrow): narrowed — val present-only 0.506/0.838/0.089 vs train 0.628/0.851/0.023 at epoch 24; heart essentially closes the gap.",
+    "Foreground mean 3D Dice vs E001 (0.598): 0.534, below E001 (-0.064); augmentation did not beat the baseline overall.",
+    "HD95 not worse; elastic on thin trachea could hurt: HD95 worse than E014 on all organs (esophagus 19.99, heart 49.80, trachea 57.28 mm); trachea collapsed (Dice 0.081, HD95 57.28) — elastic hurts the thin trachea as feared.",
+    "Follow-up question from the plan: does 50 epochs with augmentation beat 25 without? Open — not tested here."
   ]
 }
