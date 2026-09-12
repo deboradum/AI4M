@@ -48,7 +48,7 @@
       "horizontal_flip": false
     }
   },
-  "git_commit": null,
+  "git_commit": "0bba233",
   "results": {
     "epochs_completed": 25,
     "best_epoch_by_validation_dice": 24,
