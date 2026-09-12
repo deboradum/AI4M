@@ -53,11 +53,18 @@ class AugParams:
 
 def _sample_elastic_displacement(shape: tuple[int, int], alpha: float, sigma: float) -> Tensor:
     # One shared displacement field for image and GT of the same slice.
+    # elastic_transform() adds `field` directly to its identity grid, which is
+    # normalized to [-1, 1] (1.0 grid unit == half the image dimension). The
+    # config's alpha is documented in pixels ("light elastic"), so convert the
+    # pixel-space field to grid space by dividing by half the image size.
     h, w = shape
     field = torch.rand(1, 2, h, w) * 2 - 1
     kernel = 2 * math.ceil(3 * sigma) + 1
     field = TF.gaussian_blur(field, kernel_size=kernel, sigma=sigma)
-    field = field * alpha
+    field = field * alpha  # displacement in pixels: (1, 2, H, W) over (dy, dx)
+    # Grid axis 0 (width) spans 2 / w per pixel; axis 1 (height) spans 2 / h.
+    scale = torch.tensor([2.0 / w, 2.0 / h], dtype=field.dtype).view(1, 2, 1, 1)
+    field = field * scale
     return field.permute(0, 2, 3, 1)  # (1, H, W, 2) as expected by elastic_transform
 
 
