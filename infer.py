@@ -20,6 +20,7 @@ from PIL import Image
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 
+from dataset import make_slice_windows
 from main import img_transform
 from configType import TrainConfig, NETWORKS
 from stitch import group_by_patient, stitch_patient
@@ -28,18 +29,25 @@ from utils import probs2class, save_images, tqdm_
 
 class ImageFolder(Dataset):
     # Images only, no ground truth: the test set has none.
-    def __init__(self, folder: Path, img_transform):
+    def __init__(self, folder: Path, img_transform, in_slices: int = 1):
         self.files: list[Path] = sorted(folder.glob("*.png"))
         assert len(self.files) > 0, f"No .png found in {folder}"
         self.img_transform = img_transform
-        print(f">> Created inference dataset with {len(self)} images from {folder}")
+        self.in_slices = in_slices
+        self.windows = make_slice_windows(self.files, in_slices)
+        print(f">> Created inference dataset with {len(self)} images from {folder} "
+              f"({in_slices} input slice(s))")
 
     def __len__(self) -> int:
         return len(self.files)
 
     def __getitem__(self, index: int) -> dict[str, Tensor | str]:
         path: Path = self.files[index]
-        return {"images": self.img_transform(Image.open(path)),
+        parts = [self.img_transform(Image.open(window_path)) for window_path in self.windows[path]]
+        assert all(part.shape == parts[0].shape for part in parts)
+        image = torch.cat(parts, dim=0)
+        assert image.shape[0] == self.in_slices
+        return {"images": image,
                 "stems": path.stem}
 
 
@@ -49,7 +57,8 @@ def load_config(path: Path) -> TrainConfig:
 
 
 def build_net(config: TrainConfig, weights: Path, device: torch.device) -> torch.nn.Module:
-    net = NETWORKS[config.net_name](1, config.K, kernels=config.kernels, factor=config.factor)
+    net = NETWORKS[config.net_name](config.in_slices, config.K,
+                                    kernels=config.kernels, factor=config.factor)
     state_dict = torch.load(weights, map_location=device, weights_only=True)
     net.load_state_dict(state_dict)
     net.to(device)
@@ -87,7 +96,7 @@ def main(args: argparse.Namespace) -> None:
 
     net = build_net(config, args.weights, device)
 
-    dataset = ImageFolder(args.img_folder, img_transform)
+    dataset = ImageFolder(args.img_folder, img_transform, config.in_slices)
     loader = DataLoader(dataset,
                         batch_size=args.batch_size or config.B,
                         num_workers=config.num_workers,
