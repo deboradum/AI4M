@@ -1,0 +1,99 @@
+{
+  "exp_id": "E010_large_enet",
+  "parent_id": "E001",
+  "status": "complete",
+  "runtime_config": "configs/E010_large_enet.yaml",
+  "runtime_results": "results/E010_large_enet",
+  "runtime_volumes": "volumes/E010_large_enet",
+  "change": "Increase the existing ENet capacity from kernels=8/factor=2 to kernels=16/factor=4.",
+  "hypothesis": "A larger ENet improves segmentation under the fixed E001 protocol, or otherwise reveals a compute/overfitting trade-off.",
+  "dataset": {
+    "name": "SEGTHOR",
+    "source": "segthor_part1",
+    "split": {
+      "training_patients": 15,
+      "validation_patients": 5,
+      "retains": 5,
+      "seed": 0,
+      "fold": 0
+    },
+    "resolution": [256, 256],
+    "classes": ["background", "esophagus", "heart", "trachea", "aorta"]
+  },
+  "model": {
+    "name": "ENet",
+    "kernels": 16,
+    "factor": 4,
+    "in_slices": 1,
+    "parameter_count": 392891
+  },
+  "training": {
+    "mode": "full",
+    "loss": "CrossEntropy",
+    "optimizer": "Adam",
+    "learning_rate": 0.0005,
+    "betas": [0.9, 0.999],
+    "batch_size": 8,
+    "epochs": 25,
+    "temperature": 1.0,
+    "patience": -1,
+    "seed": 123,
+    "scheduler": null,
+    "augmentation": false
+  },
+  "git_commit": "63438af",
+  "results": {
+    "epochs_completed": 25,
+    "best_epoch_by_validation_dice": 24,
+    "training": {
+      "total_minutes": 22.08,
+      "seconds_per_epoch": 41.35,
+      "peak_gpu_memory_mb": 1275.1,
+      "parameter_count": 392891
+    },
+    "inference": {
+      "seconds_per_patient": 1.722,
+      "validation_patients": 5
+    },
+    "metrics_3d": {
+      "dice_mean": {
+        "esophagus": 0.546,
+        "heart": 0.828,
+        "trachea": 0.480,
+        "aorta": null,
+        "foreground_mean": 0.618
+      },
+      "hd95_mm_mean": {
+        "esophagus": 23.271,
+        "heart": 22.154,
+        "trachea": 38.579,
+        "aorta": null
+      },
+      "assd_mm_mean": {
+        "esophagus": 5.383,
+        "heart": 5.990,
+        "trachea": 7.688,
+        "aorta": null
+      },
+      "nsd_mean": {
+        "esophagus": 0.351,
+        "heart": 0.324,
+        "trachea": 0.394,
+        "aorta": null
+      }
+    },
+    "comparison_to_parent": {
+      "foreground_mean_dice_delta": 0.020,
+      "dice_delta": {
+        "esophagus": -0.064,
+        "heart": 0.020,
+        "trachea": 0.103
+      },
+      "interpretation": "Larger ENet modestly improved foreground mean Dice and every mean HD95 value, with the main Dice gain on trachea."
+    },
+    "artifacts": {
+      "metrics_3d": "results/E010_large_enet/metrics3d/metrics.csv",
+      "prediction_volumes": "volumes/E010_large_enet/nii/"
+    }
+  }
+}
