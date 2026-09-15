@@ -1,0 +1,18 @@
+# P_E003.2_weightedce_weights_aggressive.yaml
+dataset: "SEGTHOR"
+mode: "full"
+K: 5
+net_name: "ENet"
+B: 8
+kernels: 8
+factor: 2
+lr: 0.001
+betas: [0.9, 0.999]
+epochs: 25
+num_workers: 5
+temperature: 1.0
+optimizer: "Adam"
+seed: 123
+patience: -1
+loss_fn: "weighted_ce"
+class_weights: [0.01, 20.0, 20.0, 20.0, 20.0]
