@@ -3,7 +3,7 @@ from ENet import ENet
 from UNet import UNet
 
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Optional, List
 
 @dataclass
 class TrainConfig:
@@ -22,6 +22,9 @@ class TrainConfig:
     optimizer: str
     seed: int
     patience: int
+    loss_fn: str # Options: 'ce', 'weighted_ce', 'ce_dice', 'weighted_ce_dice', 'focal', 'weighted_focal', 'focal_dice'
+    focal_gamma: float = 1.0  # For 'focal'
+    class_weights: Optional[List[float]] = None  # For 'weighted_ce' and 'weighted_focal'
     # 1 preserves the original 2D baseline; 3 uses [z-1, z, z+1] as channels.
     in_slices: int = 1
     # Augmentation (1.5 ablation); defaults reproduce the E001 baseline (off).

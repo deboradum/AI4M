@@ -8,3 +8,5 @@ scikit-image
 matplotlib
 
 pyyaml
+ipykernel
+pandas
