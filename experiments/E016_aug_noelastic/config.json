@@ -1,0 +1,60 @@
+{
+  "exp_id": "E016_aug_noelastic",
+  "parent_id": "E001",
+  "status": "registered",
+  "runtime_config": "configs/E016_aug_noelastic.yaml",
+  "runtime_results": "results/E016_aug_noelastic",
+  "runtime_volumes": "volumes/E016_aug_noelastic",
+  "change": "On-the-fly augmentation of training slices WITHOUT the elastic term: rotation +-15 deg, scale 0.9-1.1, intensity shift +-0.1, elastic_alpha 0 (E015 had elastic alpha 10). 50 epochs instead of 25. No horizontal flip. One sampled geometric transform is applied identically to all input channels and the GT.",
+  "hypothesis": "E015 showed augmentation helps heart (0.883, best of all runs) and esophagus (0.640 > E001 0.610) and narrows the train/val gap, but the elastic term collapses the thin trachea (0.081 vs E001 0.377). Dropping elastic should recover trachea while keeping the heart/esophagus gains; 50 epochs gives the augmented model time to converge (25 may be undertrained).",
+  "plan_reference": "Follow-up to E015_augment (full_plan.md item 1.5); proposed in E015 result discussion",
+  "dataset": {
+    "name": "SEGTHOR",
+    "source": "segthor_part1",
+    "split": {
+      "training_patients": 15,
+      "validation_patients": 5,
+      "retains": 5,
+      "seed": 0,
+      "fold": 0
+    },
+    "resolution": [256, 256],
+    "classes": ["background", "esophagus", "heart", "trachea", "aorta"]
+  },
+  "model": {
+    "name": "ENet",
+    "kernels": 8,
+    "factor": 2,
+    "in_slices": 1
+  },
+  "training": {
+    "mode": "full",
+    "loss": "CrossEntropy",
+    "optimizer": "Adam",
+    "learning_rate": 0.0005,
+    "betas": [0.9, 0.999],
+    "batch_size": 8,
+    "epochs": 50,
+    "temperature": 1,
+    "patience": -1,
+    "seed": 123,
+    "scheduler": null,
+    "augmentation": {
+      "rotation_deg": 15,
+      "scale": [0.9, 1.1],
+      "intensity_shift": 0.1,
+      "elastic_alpha": 0,
+      "elastic_sigma": 4,
+      "horizontal_flip": false
+    }
+  },
+  "git_commit": null,
+  "results": null,
+  "what_to_check": [
+    "Trachea 3D Dice: does removing elastic recover it toward E001 (0.377) or E014_hu_wide (0.653)?",
+    "Foreground mean 3D Dice vs E001 (0.598) and vs E014_hu_wide (0.737).",
+    "Do the heart (0.883) and esophagus (0.640) gains from E015 hold without elastic?",
+    "Does 50 epochs beat E015's 25-epoch augmented result (fg 0.534)?",
+    "Present-only val Dice at final epoch must be well above 0 for all three organs (the E015-broken-run failure mode)."
+  ]
+}
