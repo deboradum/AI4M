@@ -1,0 +1,39 @@
+# E018_aorta_augment: E017_aorta_huwide + plan-1.5 augmentation.
+#
+# Same 4-organ target and the same optimization protocol as E017; only
+# augmentation is new, so this isolates its effect on the newly available aorta
+# and on the organ E017 fails on.
+#
+# Elastic is DISABLED (aug_elastic_alpha: 0), a deliberate deviation from the
+# plan-1.5 parameters: E015_augment ran them with elastic_alpha 10 and collapsed
+# the thin trachea (3D Dice 0.377 -> 0.081; 2D present-only val Dice 0.089 at the
+# last epoch). The esophagus is thinner than the trachea in-plane, and it is
+# already the organ E017 under-segments (Dice 0.229, predicted/GT volume 0.15-0.60),
+# so repeating a configuration that demonstrably destroys thin structures would
+# confound the ablation. Rotation, scale and intensity shift are kept exactly as
+# plan 1.5 specifies. num_workers is 0: E015 crashed in the DataLoader with
+# workers=5 with augmentation enabled.
+dataset: "SEGTHOR_aorta_huwide"
+mode: "full"
+loss_fn: "ce"
+K: 5
+net_name: "ENet"
+B: 8
+kernels: 8
+factor: 2
+lr: 0.0005
+betas: [0.9, 0.999]
+epochs: 25
+num_workers: 0
+temperature: 1.0
+optimizer: "Adam"
+seed: 123
+patience: -1
+in_slices: 1
+augment: true
+aug_rotation: 15.0
+aug_scale_min: 0.9
+aug_scale_max: 1.1
+aug_intensity: 0.1
+aug_elastic_alpha: 0.0
+aug_elastic_sigma: 4.0
