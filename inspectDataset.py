@@ -4,6 +4,7 @@ import numpy as np
 import nibabel as nib
 import pandas as pd
 from pathlib import Path
+import warnings
 
 def analyze_segthor_dataset(data_path):
     """
@@ -87,7 +88,11 @@ def analyze_segthor_dataset(data_path):
     # Aggregate & Output
     df_geometry = pd.DataFrame(stats)
     print("\n--- Geometry & Spacing Statistics ---")
-    print(df_geometry.describe().round(3).T[['min', 'mean', 'max']])
+
+    # Extract describe() stats, rename the 50% percentile to median, and filter
+    geom_summary = df_geometry.describe().round(3).T
+    geom_summary.rename(columns={'50%': 'median'}, inplace=True)
+    print(geom_summary[['min', 'median', 'mean', 'max']])
 
     print("\n--- Class Voxel Volumes (Imbalance Check) ---")
     total_voxels = df_geometry["Slices (Z)"] * df_geometry["Height (Y)"] * df_geometry["Width (X)"]
@@ -99,12 +104,15 @@ def analyze_segthor_dataset(data_path):
         print(f"{org:>10}: {avg_v:10.0f} avg voxels ({perc:.4f}% of volume)")
 
     print("\n--- Hounsfield Units (HU) Intensity Profiles ---")
-    for org in organs.values():
-        o_mean = np.mean(hu_stats[org]["mean"])
-        o_std = np.mean(hu_stats[org]["std"])
-        o_min = np.mean(hu_stats[org]["min"])
-        o_max = np.mean(hu_stats[org]["max"])
-        print(f"{org:>10}: Mean {o_mean:6.1f} | Std {o_std:5.1f} | 1st Pct {o_min:6.1f} | 99th Pct {o_max:6.1f}")
+    with warnings.catch_warnings():
+        # Ignore aorta NaN warnings
+        warnings.simplefilter("ignore", category=RuntimeWarning)
+        for org in organs.values():
+            o_mean = np.mean(hu_stats[org]["mean"])
+            o_std = np.mean(hu_stats[org]["std"])
+            o_min = np.mean(hu_stats[org]["min"])
+            o_max = np.mean(hu_stats[org]["max"])
+            print(f"{org:>10}: Mean {o_mean:6.1f} | Std {o_std:5.1f} | 1st Pct {o_min:6.1f} | 99th Pct {o_max:6.1f}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
