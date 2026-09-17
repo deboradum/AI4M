@@ -112,6 +112,9 @@ capability is genuinely needed, make the smallest backward-compatible change,
 add a focused test, and ensure inference supports it too. Defaults must keep
 the original one-slice behavior.
 
+The network definitions themselves (`ENet.py`, `UNet.py`, `ShallowNet.py`) and
+what `kernels`, `factor` and `in_slices` mean for each are in [MODELS.md](MODELS.md).
+
 ## 6. Test and preflight
 
 From the repository root:

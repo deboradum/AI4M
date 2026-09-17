@@ -134,9 +134,12 @@
       "Heart/trachea comparable with every earlier run; esophagus only with runs on data/SEGTHOR_aorta."
     ],
     "artifacts": {
+      "cleared": "2026-09-17",
+      "reason": "unsuccessful run, artifacts removed",
       "metrics_3d": "results/E018_aorta_augment/metrics3d/metrics.csv",
       "prediction_volumes": "volumes/E018_aorta_augment/nii/",
       "training_log": "results/E018_aorta_augment/train.log"
     }
-  }
+  },
+  "artifact_retention": "Local artifacts (results/ + volumes/) cleared 2026-09-17 with the other unsuccessful runs; every metric above is preserved in this record."
 }
