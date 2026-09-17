@@ -3,6 +3,7 @@
 # (retains 5, seed 0, fold 0). All optimization settings identical to E001.
 dataset: "SEGTHOR_huwide"
 mode: "full"
+loss_fn: "ce"  # E001-E016 all trained with cross-entropy
 K: 5
 net_name: "ENet"
 B: 8
