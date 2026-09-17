@@ -1,10 +1,10 @@
 {
   "exp_id": "E001_cw_ce_base_lr",
   "parent_id": "E001",
-  "status": "complete",
+  "status": "registered",
   "runtime_config": "configs/losses/E001_weighted_ce_base_lr.yaml",
-  "runtime_results": "results/",
-  "runtime_volumes": "volumes/",
+  "runtime_results": null,
+  "runtime_volumes": null,
   "change": "",
   "hypothesis": "",
   "plan_reference": "",
@@ -63,50 +63,50 @@
   "git_commit": "",
   "results": {
     "epochs_completed": 25,
-    "best_epoch_by_validation_dice": ,
+    "best_epoch_by_validation_dice": null,
     "training": {
-      "total_minutes": ,
-      "device": ,
-      "parameter_count":
+      "total_minutes": null,
+      "device": null,
+      "parameter_count": null
     },
     "inference": {
-      "seconds_per_patient": ,
-      "device": ,
-      "validation_patients":
+      "seconds_per_patient": null,
+      "device": null,
+      "validation_patients": null
     },
     "metrics_3d": {
       "dice_mean": {
-        "esophagus": ,
-        "heart": ,
-        "trachea": ,
-        "aorta": ,
-        "foreground_mean":
+        "esophagus": null,
+        "heart": null,
+        "trachea": null,
+        "aorta": null,
+        "foreground_mean": null
       },
       "hd95_mm_mean": {
-        "esophagus": ,
-        "heart": ,
-        "trachea": ,
-        "aorta":
+        "esophagus": null,
+        "heart": null,
+        "trachea": null,
+        "aorta": null
       },
       "assd_mm_mean": {
-        "esophagus": ,
-        "heart": ,
-        "trachea": ,
-        "aorta":
+        "esophagus": null,
+        "heart": null,
+        "trachea": null,
+        "aorta": null
       },
       "nsd_mean": {
-        "esophagus": ,
-        "heart": ,
-        "trachea": ,
-        "aorta":
+        "esophagus": null,
+        "heart": null,
+        "trachea": null,
+        "aorta": null
       }
     },
     "comparison_to_parent": {
-      "foreground_mean_dice_delta": ,
+      "foreground_mean_dice_delta": null,
       "dice_delta": {
-        "esophagus": ,
-        "heart": ,
-        "trachea":
+        "esophagus": null,
+        "heart": null,
+        "trachea": null
       },
       "interpretation": ""
     },
@@ -116,5 +116,6 @@
       "prediction_volumes": ""
     }
   },
-  "what_to_check": []
+  "what_to_check": [],
+  "run_state": "template only - never executed; result fields are null"
 }
