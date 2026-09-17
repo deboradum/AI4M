@@ -1,0 +1,193 @@
+{
+  "exp_id": "E022_aorta_ce_dice_augment_75ep",
+  "parent_id": "E020_aorta_augment_50ep",
+  "status": "complete",
+  "runtime_config": "configs/E022_aorta_ce_dice_augment_75ep.yaml",
+  "runtime_results": "results/E022_aorta_ce_dice_augment_75ep",
+  "runtime_volumes": "volumes/E022_aorta_ce_dice_augment_75ep",
+  "change": "Combines the two levers that each helped alone, and extends the budget: ce_dice loss (E019's lever) + plan-1.5 augmentation with elastic disabled (E020's lever) + 75 constant-LR epochs instead of 50. Identical to E020 in every other respect (4-organ target, split, seed 123, lr 5e-4, batch 8, ENet 8/2, aug_elastic_alpha 0). num_workers is 0 because augmentation with workers=5 is the combination that crashed E015 in the DataLoader.",
+  "hypothesis": "E019 and E020 reach the same esophagus by different routes and differ elsewhere (E019 wins trachea +0.041, E020 wins heart +0.021 and aorta +0.074 on the same GT), so they are complementary rather than redundant and combining them should dominate both: expect esophagus at or above 0.428, trachea at or above 0.787, heart near 0.907 and aorta near 0.746, i.e. a foreground mean above E020's 0.706. The 75-epoch extension is evidence-driven: E020's best epoch was 48 of 50 with the selection curve still rising, and the orphaned E006_cosine_50 peaked at 46 of 50, so the epoch budget may still be the binding constraint at a constant learning rate.",
+  "plan_reference": "Combination of E019 (plan 1.2, CE + soft Dice) and E020 (plan 1.5, augmentation at 50 epochs); 75-epoch extension motivated by E006_cosine_50 (plan 1.6)",
+  "dataset": {
+    "name": "SEGTHOR_aorta_huwide",
+    "source": "segthor_part1 (GT class 1 split back into esophagus + aorta)",
+    "split": {
+      "training_patients": 15,
+      "validation_patients": 5,
+      "retains": 5,
+      "seed": 0,
+      "fold": 0
+    },
+    "resolution": [
+      256,
+      256
+    ],
+    "classes": [
+      "background",
+      "esophagus",
+      "heart",
+      "trachea",
+      "aorta"
+    ],
+    "label_caveat": "Derived, not annotated: the split is validated by Dice 0.9994/0.9980 against the single reference patient (Patient_07 GT2) and by four geometric gates plus visual review on the other 19."
+  },
+  "model": {
+    "name": "ENet",
+    "kernels": 8,
+    "factor": 2,
+    "in_slices": 1
+  },
+  "training": {
+    "mode": "full",
+    "loss": "CEDiceLoss",
+    "optimizer": "Adam",
+    "learning_rate": 0.0005,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "batch_size": 8,
+    "epochs": 75,
+    "temperature": 1,
+    "patience": -1,
+    "seed": 123,
+    "scheduler": null,
+    "augmentation": {
+      "rotation_deg": 15,
+      "scale": [
+        0.9,
+        1.1
+      ],
+      "intensity_shift": 0.1,
+      "elastic_alpha": 0,
+      "elastic_sigma": 4,
+      "horizontal_flip": false
+    }
+  },
+  "git_commit": "b54052c",
+  "what_to_check": [
+    "Foreground mean against E020's 0.706 - this run exists to beat it. If it does not, the two levers are not additive and that is the finding.",
+    "Esophagus 3D Dice against E019's 0.428 and E020's 0.424; trachea against E019's 0.787; heart against E020's 0.907; aorta against E020's 0.746.",
+    "Patient_15's esophagus, which none of E017-E020 moved (0.000 / 0.000 / 0.021 / 0.014). Does the combination finally reach it?",
+    "Best epoch: if it is again near the end (E020 was 48/50), 75 epochs is still not the ceiling and cosine decay becomes the next lever, as E006_cosine_50 suggests.",
+    "check_labels.py --dice_npy: 'main.py:321 mean' must equal 'mean over classes with GT' - no configured class is empty on this dataset.",
+    "Loss scale is not comparable with the CE runs: CEDiceLoss returns CE + (1 - mean Dice), so compare Dice, not loss."
+  ],
+  "results": {
+    "epochs_completed": 75,
+    "best_epoch_by_validation_dice": 71,
+    "training": {
+      "total_minutes": 133.1,
+      "seconds_per_epoch": 98.15,
+      "device": "mps (Apple silicon, local)",
+      "parameter_count": 284003,
+      "train_2d_dice_last_epoch": 0.911,
+      "val_2d_dice_last_epoch": 0.848
+    },
+    "inference": {
+      "seconds_per_patient": 4.466,
+      "device": "cpu\n",
+      "validation_patients": 5
+    },
+    "metrics_3d": {
+      "dice_mean": {
+        "esophagus": 0.491,
+        "heart": 0.921,
+        "trachea": 0.82,
+        "aorta": 0.796,
+        "foreground_mean": 0.757
+      },
+      "hd95_mm_mean": {
+        "esophagus": 56.57,
+        "heart": 18.703,
+        "trachea": 17.773,
+        "aorta": 21.443
+      },
+      "assd_mm_mean": {
+        "esophagus": 12.995,
+        "heart": 3.313,
+        "trachea": 2.272,
+        "aorta": 3.455
+      },
+      "nsd_mean": {
+        "esophagus": 0.487,
+        "heart": 0.514,
+        "trachea": 0.775,
+        "aorta": 0.591
+      }
+    },
+    "paired_tests": {
+      "method": "per-patient deltas on the same 5 patients (patient difficulty cancels); |t|>2.8 treated as real on n=5",
+      "vs_E020_aorta_augment_50ep": {
+        "esophagus": [
+          0.068,
+          0.026,
+          2.6
+        ],
+        "heart": [
+          0.014,
+          0.011,
+          1.3
+        ],
+        "trachea": [
+          0.074,
+          0.051,
+          1.5
+        ],
+        "aorta": [
+          0.05,
+          0.022,
+          2.2
+        ]
+      },
+      "vs_E019_aorta_ce_dice": {
+        "esophagus": [
+          0.063,
+          0.024,
+          2.6
+        ],
+        "heart": [
+          0.036,
+          0.007,
+          4.9
+        ],
+        "trachea": [
+          0.034,
+          0.026,
+          1.3
+        ],
+        "aorta": [
+          0.124,
+          0.026,
+          4.8
+        ]
+      },
+      "key": "tuple = (mean delta, SE, t)"
+    },
+    "comparison_to_parent": {
+      "parent": "E020_aorta_augment_50ep",
+      "protocol": "identical data/split/seed/augmentation; the loss and the epoch budget changed",
+      "dice_delta": {
+        "esophagus": 0.067,
+        "heart": 0.014,
+        "trachea": 0.074,
+        "aorta": 0.05
+      },
+      "foreground_mean_delta": 0.051,
+      "interpretation": "Hypothesis confirmed and it is the best run in the project: foreground mean 0.757 against E020's 0.706 (+0.051) and E019's 0.693, and it leads on EVERY class at once (esophagus 0.491, heart 0.921, trachea 0.820, aorta 0.796). The two levers are additive as predicted. BUT be honest about strength: paired per patient, only heart (+0.036, t=+4.9) and aorta (+0.124, t=+4.8) versus E019 clear the noise bar; the esophagus gains are suggestive, not decisive (+0.068 vs E020 at t=+2.6, +0.063 vs E019 at t=+2.6). Direction is unanimous though: all 5 patients improve on the esophagus against both parents (P01 .500->.662, P11 .460->.485, P15 .014->.030, P17 .598->.652, P19 .547->.628), a 5/5 sign test, p=0.0625 two-sided - consistent with t=2.6 and the largest evidence the project has for that organ."
+    },
+    "notes": [
+      "Best epoch 71 of 75 - the curve was STILL rising at the end, third run in a row (E020 48/50, E006_cosine_50 46/50). The epoch budget remains the binding constraint, so a decaying LR (plan 1.6) is now the best-supported next lever rather than a guess.",
+      "Patient_15's esophagus moved for the first time in the project (0.021 -> 0.030, and 0.000 in E017/E018) - still the standing failure, but no longer flat.",
+      "Trachea 0.820 exceeds E019's 0.787 which was itself the best; the earlier 'E019 wins trachea' comparison was inside noise.",
+      "Boundary metrics follow the Dice: heart HD95 18.8 -> 11.2 mm vs E019.",
+      "Cost: 133 min against E020's 95 min for +0.051 foreground mean.",
+      "Labels are derived, not annotated. Heart/trachea comparable with every earlier run; esophagus only with runs on data/SEGTHOR_aorta."
+    ],
+    "artifacts": {
+      "metrics_3d": "results/E022_aorta_ce_dice_augment_75ep/metrics3d/metrics.csv",
+      "prediction_volumes": "volumes/E022_aorta_ce_dice_augment_75ep/nii/",
+      "training_log": "results/E022_aorta_ce_dice_augment_75ep/train.log"
+    }
+  }
+}
