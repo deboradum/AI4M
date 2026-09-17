@@ -63,6 +63,21 @@ mv data/SEGTHOR_tmp data/SEGTHOR
 Only promote the temporary directory if `data/SEGTHOR/` does not already
 exist. Every comparable experiment must use the same split and preprocessing.
 
+The aorta is folded into class 1 of that archive. For the 4-organ variant:
+
+```bash
+make data/SEGTHOR_aorta          # split the folded class 1 into esophagus + aorta
+make data/SEGTHOR_aorta_huwide   # slice it, window [-1000, 1000], E001-E016 split
+```
+
+`data/SEGTHOR_aorta/` is the unsliced source (4-organ GT, `split_report.csv`,
+CTs symlinked, see `AORTA_INSPECTION/aorta-findings.md`); `_norm`, `_husoft`
+and `_resampled` are the same slicing with the other preprocessing, and a run
+on them sets `dataset: "SEGTHOR_aorta_huwide"`. Heart and trachea stay
+comparable with E001-E016; the esophagus target does not (it is the thin organ
+alone now, not esophagus ∪ aorta), so do not compare esophagus Dice across the
+two datasets.
+
 ## 4. Register an ablation before running it
 
 Choose a parent experiment, normally `E001` for an isolated comparison. Use a
