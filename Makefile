@@ -37,3 +37,44 @@ data/SEGTHOR_RESAMPLED:
 	python $(CFLAGS) slice_segthor.py --source_dir data/segthor_part1 --dest_dir $@_tmp \
 		--shape 256 256 --retains 5 --resample --target_spacing 1.0 1.0 2.5
 	mv $@_tmp $@
+
+
+# Slicing for the aorta-recovered SegTHOR
+## data/SEGTHOR_aorta holds the challenge's four organs: class 1 of the archive's
+## GT is esophagus UNION aorta (folded together), so retrieve_aorta.py splits it
+## back with a distance-transform watershed and gates. See
+## AORTA_INSPECTION/aorta-findings.md. The slicing uses the E001-E016 split
+## (retains 5, seed 0, fold 0) so new runs stay comparable with the old ones.
+## Note the esophagus target changes: it is the thin organ alone now, not the fold.
+AORTA_PY ?= ./ai4mi/bin/python
+AORTA_SLICE = $(AORTA_PY) slice_segthor.py --source_dir data/SEGTHOR_aorta --dest_dir $@_tmp \
+	--shape 256 256 --retains 5 --seed 0 --fold 0 -p -1
+
+data/SEGTHOR_aorta: data/segthor_part1
+	$(info $(green)python retrieve_aorta.py$(reset))
+	$(AORTA_PY) retrieve_aorta.py --src data/segthor_part1/train --dest $@ \
+		--gt2 data/segthor_part1/train/Patient_07/GT2.nii.gz --figures AORTA_INSPECTION
+
+data/SEGTHOR_aorta_norm: data/SEGTHOR_aorta
+	$(info $(green)python slice_segthor.py (per-patient min-max)$(reset))
+	rm -rf $@_tmp $@
+	$(AORTA_SLICE)
+	mv $@_tmp $@
+
+data/SEGTHOR_aorta_huwide: data/SEGTHOR_aorta
+	$(info $(green)python slice_segthor.py (window -1000 1000)$(reset))
+	rm -rf $@_tmp $@
+	$(AORTA_SLICE) --window -1000 1000
+	mv $@_tmp $@
+
+data/SEGTHOR_aorta_husoft: data/SEGTHOR_aorta
+	$(info $(green)python slice_segthor.py (window -200 300)$(reset))
+	rm -rf $@_tmp $@
+	$(AORTA_SLICE) --window -200 300
+	mv $@_tmp $@
+
+data/SEGTHOR_aorta_resampled: data/SEGTHOR_aorta
+	$(info $(green)python slice_segthor.py (window -1000 1000, resampled 1.0 1.0 2.5)$(reset))
+	rm -rf $@_tmp $@
+	$(AORTA_SLICE) --window -1000 1000 --resample --target_spacing 1.0 1.0 2.5
+	mv $@_tmp $@
