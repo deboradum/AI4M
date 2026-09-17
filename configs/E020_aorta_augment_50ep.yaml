@@ -1,0 +1,37 @@
+# E020_aorta_augment_50ep: augmentation on the 4-organ target, for long enough
+# to converge.
+#
+# E018_aorta_augment ran exactly these augmentation settings for 25 epochs and
+# was rejected on the esophagus (3D Dice 0.134 against E017's 0.229), but the
+# run also looked undertrained: with augmentation the training 2D Dice at the
+# last epoch was 0.794 against E017's 0.885, while the train/val gap collapsed
+# from 0.122 to 0.030. That is the same lesson E015 taught on the folded data,
+# which is why E016_aug_noelastic was set to 50 epochs and never run.
+#
+# This run gives augmentation the same fair test on the 4-organ target: 50
+# epochs, elastic still disabled (E015's elastic_alpha 10 collapsed the thin
+# trachea 0.377 -> 0.081), everything else identical to E018.
+dataset: "SEGTHOR_aorta_huwide"
+mode: "full"
+loss_fn: "ce"
+K: 5
+net_name: "ENet"
+B: 8
+kernels: 8
+factor: 2
+lr: 0.0005
+betas: [0.9, 0.999]
+epochs: 50
+num_workers: 0
+temperature: 1.0
+optimizer: "Adam"
+seed: 123
+patience: -1
+in_slices: 1
+augment: true
+aug_rotation: 15.0
+aug_scale_min: 0.9
+aug_scale_max: 1.1
+aug_intensity: 0.1
+aug_elastic_alpha: 0.0
+aug_elastic_sigma: 4.0

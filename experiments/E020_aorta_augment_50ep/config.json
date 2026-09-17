@@ -1,0 +1,75 @@
+{
+  "exp_id": "E020_aorta_augment_50ep",
+  "parent_id": "E018_aorta_augment",
+  "status": "registered",
+  "runtime_config": "configs/E020_aorta_augment_50ep.yaml",
+  "runtime_results": "results/E020_aorta_augment_50ep",
+  "runtime_volumes": "volumes/E020_aorta_augment_50ep",
+  "change": "E018_aorta_augment extended from 25 to 50 epochs, everything else identical (same augmentation, elastic still disabled, same 4-organ target, split, seed, lr and batch size). E018's 25-epoch rejection of augmentation on the esophagus may be an undertraining artefact rather than a property of the augmentation: with augmentation the training 2D Dice was still 0.794 at the last epoch against E017's 0.885, and the train/val gap had collapsed to 0.030, so the augmented model had not converged. This is the same correction E015's result implied on the folded data, where E016_aug_noelastic was set to 50 epochs for the same reason.",
+  "hypothesis": "With enough epochs the augmentation should match or beat E017 on the thin esophagus while keeping the aorta gain E018 showed (0.724 vs E017's 0.667). If esophagus 3D Dice is still below 0.229 at 50 epochs, then the warp of a 5-10 voxel tube is genuinely harmful on this target and the loss route (E019) is the answer; if it recovers and the aorta gain holds, augmentation is worth keeping on top of the best loss.",
+  "plan_reference": "AORTA_INSPECTION/aorta-findings.md; full_plan.md section 3 (aorta) superseded for a recoverable label",
+  "dataset": {
+    "name": "SEGTHOR_aorta_huwide",
+    "source": "segthor_part1 (GT class 1 split back into esophagus + aorta)",
+    "split": {
+      "training_patients": 15,
+      "validation_patients": 5,
+      "retains": 5,
+      "seed": 0,
+      "fold": 0
+    },
+    "resolution": [
+      256,
+      256
+    ],
+    "classes": [
+      "background",
+      "esophagus",
+      "heart",
+      "trachea",
+      "aorta"
+    ],
+    "label_caveat": "Derived, not annotated: the split is validated by Dice 0.9994/0.9980 against the single reference patient (Patient_07 GT2) and by four geometric gates plus visual review on the other 19."
+  },
+  "model": {
+    "name": "ENet",
+    "kernels": 8,
+    "factor": 2,
+    "in_slices": 1
+  },
+  "training": {
+    "mode": "full",
+    "loss": "CrossEntropy",
+    "optimizer": "Adam",
+    "learning_rate": 0.0005,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "batch_size": 8,
+    "epochs": 25,
+    "temperature": 1,
+    "patience": -1,
+    "seed": 123,
+    "scheduler": null,
+    "augmentation": {
+      "rotation_deg": 15,
+      "scale": [
+        0.9,
+        1.1
+      ],
+      "intensity_shift": 0.1,
+      "elastic_alpha": 0,
+      "elastic_sigma": 4,
+      "horizontal_flip": false
+    }
+  },
+  "git_commit": "c48e27a",
+  "what_to_check": [
+    "Esophagus 3D Dice against E017's 0.229 and E018's 0.134 - the number that decides whether E018's rejection was real or an undertraining artefact.",
+    "Aorta 3D Dice against E018's 0.724 and E017's 0.667: the augmentation gain must survive 50 epochs.",
+    "Training 2D Dice in dice_tra.npy at the last epoch: it must approach E017's 0.885, otherwise 50 epochs was still not long enough and the run says nothing.",
+    "Val curve shape: does val_dice keep rising to the end (undertrained) or plateau before epoch 40 (converged)?",
+    "Patient_15, the standing worst case: esophagus was 0.000 in both E017 and E018."
+  ]
+}
