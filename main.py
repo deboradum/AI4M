@@ -160,6 +160,8 @@ def runTraining(args, config: TrainConfig):
         target_classes = list(range(K))
     elif config.mode == "partial" and config.dataset == 'SEGTHOR':
         target_classes = [0, 1, 3, 4]
+    elif config.mode == "partial" and config.dataset == 'SEGTHOR_RESAMPLED':
+        target_classes = [0, 1, 3, 4]
     else:
         raise ValueError(f"Unsupported mode '{config.mode}' for dataset '{config.dataset}'")
 
