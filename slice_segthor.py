@@ -33,6 +33,7 @@ from typing import Callable
 
 import numpy as np
 import nibabel as nib
+import scipy.ndimage
 from skimage.io import imsave
 from skimage.transform import resize
 
@@ -91,14 +92,41 @@ def sanity_gt(gt, ct) -> bool:
 resize_: Callable = partial(resize, mode="constant", preserve_range=True, anti_aliasing=False)
 
 
+def pad_or_crop_center(img: np.ndarray, target_shape: tuple[int, int]) -> np.ndarray:
+    """
+    Pads or crops a 2D image from the center to match the target shape.
+    """
+    x, y = img.shape
+    tx, ty = target_shape
+
+    # X axis
+    if x > tx: # Crop
+        start_x = (x - tx) // 2
+        img = img[start_x:start_x + tx, :]
+    elif x < tx: # Pad
+        pad_x = (tx - x) // 2
+        img = np.pad(img, ((pad_x, tx - x - pad_x), (0, 0)), mode='constant', constant_values=0)
+
+    # Y axis
+    if y > ty: # Crop
+        start_y = (y - ty) // 2
+        img = img[:, start_y:start_y + ty]
+    elif y < ty: # Pad
+        pad_y = (ty - y) // 2
+        img = np.pad(img, ((0, 0), (pad_y, ty - y - pad_y)), mode='constant', constant_values=0)
+
+    return img
+
+
 def slice_patient(id_: str, dest_path: Path, source_path: Path, shape: tuple[int, int],
-                  test_mode: bool = False, window: tuple[float, float] | None = None) -> tuple[float, float, float]:
+                  test_mode: bool = False, window: tuple[float, float] | None = None,
+                  resample: bool = False, target_spacing: tuple[float, float, float] = (1.0, 1.0, 2.5)) -> tuple[float, float, float]:
     id_path: Path = source_path / ("train" if not test_mode else "test") / id_
 
     ct_path: Path = (id_path / f"{id_}.nii.gz") if not test_mode else (source_path / "test" / f"{id_}.nii.gz")
     nib_obj = nib.load(str(ct_path))
     ct: np.ndarray = np.asarray(nib_obj.dataobj)
-    # dx, dy, dz = nib_obj.header.get_zooms()
+
     x, y, z = ct.shape
     dx, dy, dz = nib_obj.header.get_zooms()
 
@@ -108,7 +136,6 @@ def slice_patient(id_: str, dest_path: Path, source_path: Path, shape: tuple[int
     if not test_mode:
         gt_path: Path = id_path / "GT.nii.gz"
         gt_nib = nib.load(str(gt_path))
-        # print(nib_obj.affine, gt_nib.affine)
         gt = np.asarray(gt_nib.dataobj)
         assert sanity_gt(gt, ct)
     else:
@@ -116,24 +143,41 @@ def slice_patient(id_: str, dest_path: Path, source_path: Path, shape: tuple[int
 
     norm_ct: np.ndarray = norm_window(ct, *window) if window is not None else norm_arr(ct)
 
-    to_slice_ct = norm_ct
-    to_slice_gt = gt
+    if resample:
+        zoom_factors = (dx / target_spacing[0], dy / target_spacing[1], dz / target_spacing[2])
+        # Use order=1 (trilinear) for CT and order=0 (nearest-neighbor) for masks
+        to_slice_ct = scipy.ndimage.zoom(norm_ct, zoom_factors, order=1, mode='nearest')
+        to_slice_gt = scipy.ndimage.zoom(gt, zoom_factors, order=0, mode='nearest')
 
-    for idz in range(z):
-        img_slice = resize_(to_slice_ct[:, :, idz], shape).astype(np.uint8)
-        gt_slice = resize_(to_slice_gt[:, :, idz], shape, order=0).astype(np.uint8)
+        z_slices = to_slice_ct.shape[2]
+        out_dx, out_dy, out_dz = target_spacing
+    else:
+        to_slice_ct = norm_ct
+        to_slice_gt = gt
+        z_slices = z
+        out_dx, out_dy, out_dz = dx, dy, dz
+
+    for idz in range(z_slices):
+        if resample:
+            img_slice = to_slice_ct[:, :, idz].astype(np.uint8)
+            gt_slice = to_slice_gt[:, :, idz].astype(np.uint8)
+
+            img_slice = pad_or_crop_center(img_slice, shape)
+            gt_slice = pad_or_crop_center(gt_slice, shape)
+        else:
+            img_slice = resize_(to_slice_ct[:, :, idz], shape).astype(np.uint8)
+            gt_slice = resize_(to_slice_gt[:, :, idz], shape, order=0).astype(np.uint8)
+
         assert img_slice.shape == gt_slice.shape
         gt_slice *= 63
         assert gt_slice.dtype == np.uint8, gt_slice.dtype
-        # assert set(np.unique(gt_slice)) <= set(range(5))
         assert set(np.unique(gt_slice)) <= set([0, 63, 126, 189, 252]), np.unique(gt_slice)
 
         arrays: list[np.ndarray] = [img_slice, gt_slice]
 
         subfolders: list[str] = ["img", "gt"]
         assert len(arrays) == len(subfolders)
-        for save_subfolder, data in zip(subfolders,
-                                        arrays):
+        for save_subfolder, data in zip(subfolders, arrays):
             filename = f"{id_}_{idz:04d}.png"
 
             save_path: Path = Path(dest_path, save_subfolder)
@@ -143,7 +187,7 @@ def slice_patient(id_: str, dest_path: Path, source_path: Path, shape: tuple[int
                 warnings.filterwarnings("ignore", category=UserWarning)
                 imsave(str(save_path / filename), data)
 
-    return dx, dy, dz
+    return out_dx, out_dy, out_dz
 
 
 def get_splits(src_path: Path, retains: int, fold: int) -> tuple[list[str], list[str], list[str]]:
@@ -193,7 +237,9 @@ def main(args: argparse.Namespace):
                                  source_path=src_path,
                                  shape=tuple(args.shape),
                                  test_mode=mode == 'test',
-                                 window=tuple(args.window) if args.window else None)
+                                 window=tuple(args.window) if args.window else None,
+                                 resample=args.resample,
+                                 target_spacing=tuple(args.target_spacing))
         resolutions: list[tuple[float, float, float]]
         iterator = tqdm_(split_ids)
         match args.process:
@@ -226,6 +272,10 @@ def get_args() -> argparse.Namespace:
     parser.add_argument('--window', type=float, nargs=2, default=None, metavar=("LOW", "HIGH"),
                         help="Fixed HU window [LOW, HIGH]; clips then normalizes to 0-255. "
                              "Default: per-patient min-max (original behavior).")
+    parser.add_argument('--resample', action='store_true',
+                        help="Enable physical resampling to target spacing.")
+    parser.add_argument('--target_spacing', type=float, nargs=3, default=[1.0, 1.0, 2.5],
+                        help="Target physical spacing (x, y, z) in mm. Used if --resample is set.")
     args = parser.parse_args()
     random.seed(args.seed)
 

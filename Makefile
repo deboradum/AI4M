@@ -30,3 +30,10 @@ data/SEGTHOR:
 	python $(CFLAGS) slice_segthor.py --source_dir data/segthor_part1 --dest_dir $@_tmp \
 		--shape 256 256 --retain 5
 	mv $@_tmp $@
+
+data/SEGTHOR_RESAMPLED:
+	$(info $(green)python $(CFLAGS) slice_segthor.py (Resampled)$(reset))
+	rm -rf $@_tmp $@
+	python $(CFLAGS) slice_segthor.py --source_dir data/segthor_part1 --dest_dir $@_tmp \
+		--shape 256 256 --retains 5 --resample --target_spacing 1.0 1.0 2.5
+	mv $@_tmp $@
