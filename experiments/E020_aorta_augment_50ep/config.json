@@ -1,7 +1,7 @@
 {
   "exp_id": "E020_aorta_augment_50ep",
   "parent_id": "E018_aorta_augment",
-  "status": "registered",
+  "status": "complete",
   "runtime_config": "configs/E020_aorta_augment_50ep.yaml",
   "runtime_results": "results/E020_aorta_augment_50ep",
   "runtime_volumes": "volumes/E020_aorta_augment_50ep",
@@ -64,12 +64,85 @@
       "horizontal_flip": false
     }
   },
-  "git_commit": "c48e27a",
+  "git_commit": "d85af56",
   "what_to_check": [
     "Esophagus 3D Dice against E017's 0.229 and E018's 0.134 - the number that decides whether E018's rejection was real or an undertraining artefact.",
     "Aorta 3D Dice against E018's 0.724 and E017's 0.667: the augmentation gain must survive 50 epochs.",
     "Training 2D Dice in dice_tra.npy at the last epoch: it must approach E017's 0.885, otherwise 50 epochs was still not long enough and the run says nothing.",
     "Val curve shape: does val_dice keep rising to the end (undertrained) or plateau before epoch 40 (converged)?",
     "Patient_15, the standing worst case: esophagus was 0.000 in both E017 and E018."
-  ]
+  ],
+  "results": {
+    "epochs_completed": 50,
+    "best_epoch_by_validation_dice": 48,
+    "training": {
+      "total_minutes": 95.2,
+      "seconds_per_epoch": 105.26,
+      "device": "mps (Apple silicon, local)",
+      "parameter_count": 284003,
+      "train_2d_dice_last_epoch": 0.898,
+      "val_2d_dice_last_epoch": 0.819
+    },
+    "inference": {
+      "seconds_per_patient": 5.456,
+      "device": "cpu\n",
+      "validation_patients": 5
+    },
+    "metrics_3d": {
+      "dice_mean": {
+        "esophagus": 0.424,
+        "heart": 0.907,
+        "trachea": 0.746,
+        "aorta": 0.746,
+        "foreground_mean": 0.706
+      },
+      "hd95_mm_mean": {
+        "esophagus": 48.668,
+        "heart": 20.521,
+        "trachea": 20.959,
+        "aorta": 22.292
+      },
+      "assd_mm_mean": {
+        "esophagus": 11.84,
+        "heart": 3.882,
+        "trachea": 3.846,
+        "aorta": 3.885
+      },
+      "nsd_mean": {
+        "esophagus": 0.417,
+        "heart": 0.481,
+        "trachea": 0.679,
+        "aorta": 0.503
+      }
+    },
+    "comparison_to_parent": {
+      "parent": "E018_aorta_augment",
+      "protocol": "identical to E018 except epochs (50 vs 25)",
+      "dice_delta": {
+        "esophagus": 0.29,
+        "heart": 0.002,
+        "trachea": 0.085,
+        "aorta": 0.022
+      },
+      "foreground_mean_delta": 0.1,
+      "interpretation": "E018's rejection of augmentation was an epoch-budget artefact, confirmed. Doubling the budget takes the esophagus from 0.134 to 0.424 (+0.290) and the trachea from 0.661 to 0.746 (+0.085) while the aorta holds (0.724 -> 0.746). The 2D training Dice also caught up (0.794 at E018's last epoch, 0.834 val selection here at epoch 48). Augmentation was never bad for the thin classes; 25 epochs simply had not converged."
+    },
+    "vs_sibling_ce_dice": {
+      "E020_esophagus_minus_E019": -0.004,
+      "E020_trachea_minus_E019": -0.041,
+      "E020_aorta_minus_E019": 0.074,
+      "interpretation": "The two levers reach the same esophagus (0.424 vs 0.428, inside noise) by different routes: E019 wins trachea (+0.041) and E020 wins heart (+0.021) and aorta (+0.074). E020 has the better foreground mean (0.706 vs 0.693) and the better boundary profile on heart (HD95 9.1 mm vs 18.8). They are complementary, not redundant - the untested combination is ce_dice + 50-epoch augmentation."
+    },
+    "notes": [
+      "Highest foreground mean of every run in the project (0.706), and best on heart (0.907) and aorta (0.746).",
+      "Best epoch 48 of 50 - the selection was still improving at the end, so 50 epochs may still be short. E006_cosine_50 showed the same late-best-epoch behaviour (46 of 50).",
+      "Patient_15's esophagus remains the project's standing failure (0.014). No single change has moved it: E017 0.000, E018 0.000, E019 0.021, E020 0.014.",
+      "Heart and trachea comparable with every earlier run; esophagus only with runs on data/SEGTHOR_aorta. Labels are derived, not annotated."
+    ],
+    "artifacts": {
+      "metrics_3d": "results/E020_aorta_augment_50ep/metrics3d/metrics.csv",
+      "prediction_volumes": "volumes/E020_aorta_augment_50ep/nii/",
+      "training_log": "results/E020_aorta_augment_50ep/train.log"
+    }
+  }
 }
