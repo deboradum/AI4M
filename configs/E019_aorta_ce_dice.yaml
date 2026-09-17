@@ -1,0 +1,28 @@
+# E019_aorta_ce_dice: E017_aorta_huwide with a region-overlap loss term.
+#
+# Identical to E017 except loss_fn: "ce_dice" (cross-entropy + soft Dice over all
+# five classes). Rationale: E017's failure mode is systematic under-segmentation
+# of the thin esophagus (predicted/GT volume 0.15-0.60 on every validation
+# patient) and, on Patient_15, of the aorta (43 % of the target captured). Plain
+# cross-entropy is dominated by the background and penalises a missed thin organ
+# only through per-voxel error; a soft Dice term optimises region overlap
+# directly, which is the standard remedy for small-structure under-segmentation.
+# Same data, split, seed, epochs and every other optimization setting as E017:
+# the loss is the only changed variable.
+dataset: "SEGTHOR_aorta_huwide"
+mode: "full"
+loss_fn: "ce_dice"
+K: 5
+net_name: "ENet"
+B: 8
+kernels: 8
+factor: 2
+lr: 0.0005
+betas: [0.9, 0.999]
+epochs: 25
+num_workers: 5
+temperature: 1.0
+optimizer: "Adam"
+seed: 123
+patience: -1
+in_slices: 1
