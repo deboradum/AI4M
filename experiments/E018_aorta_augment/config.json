@@ -1,0 +1,75 @@
+{
+  "exp_id": "E018_aorta_augment",
+  "parent_id": "E017_aorta_huwide",
+  "status": "registered",
+  "runtime_config": "configs/E018_aorta_augment.yaml",
+  "runtime_results": "results/E018_aorta_augment",
+  "runtime_volumes": "volumes/E018_aorta_augment",
+  "change": "E017_aorta_huwide plus plan-1.5 augmentation applied to the training slices only: rotation +-15 deg, scale 0.9-1.1, intensity shift +-0.1, no horizontal flip, one geometric transform shared by the image and its GT. Elastic is DISABLED (aug_elastic_alpha 0), a deliberate deviation from the plan-1.5 parameters - E015_augment ran them with elastic_alpha 10 and collapsed the thin trachea (3D Dice 0.377 -> 0.081), and the esophagus is thinner than the trachea and is already the organ E017 under-segments, so repeating an elastic warp would confound this ablation. num_workers is 0 because E015 crashed in the DataLoader with workers=5. Everything else (4-organ target, split, seed, epochs, lr, batch size) is identical to E017.",
+  "hypothesis": "Augmentation is the standard remedy for a thin structure trained on 15 patients: the esophagus is the organ E017 under-segments (Dice 0.229; predicted/GT volume ratio 0.15-0.60), and the aorta is the largest class so it should be unaffected. Expect esophagus 3D Dice to rise above 0.229 and the train/val gap to narrow, with heart/trachea/aorta held within seed noise (0.900 / 0.664 / 0.667).",
+  "plan_reference": "AORTA_INSPECTION/aorta-findings.md; full_plan.md section 3 (aorta) superseded for a recoverable label",
+  "dataset": {
+    "name": "SEGTHOR_aorta_huwide",
+    "source": "segthor_part1 (GT class 1 split back into esophagus + aorta)",
+    "split": {
+      "training_patients": 15,
+      "validation_patients": 5,
+      "retains": 5,
+      "seed": 0,
+      "fold": 0
+    },
+    "resolution": [
+      256,
+      256
+    ],
+    "classes": [
+      "background",
+      "esophagus",
+      "heart",
+      "trachea",
+      "aorta"
+    ],
+    "label_caveat": "Derived, not annotated: the split is validated by Dice 0.9994/0.9980 against the single reference patient (Patient_07 GT2) and by four geometric gates plus visual review on the other 19."
+  },
+  "model": {
+    "name": "ENet",
+    "kernels": 8,
+    "factor": 2,
+    "in_slices": 1
+  },
+  "training": {
+    "mode": "full",
+    "loss": "CrossEntropy",
+    "optimizer": "Adam",
+    "learning_rate": 0.0005,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "batch_size": 8,
+    "epochs": 25,
+    "temperature": 1,
+    "patience": -1,
+    "seed": 123,
+    "scheduler": null,
+    "augmentation": {
+      "rotation_deg": 15,
+      "scale": [
+        0.9,
+        1.1
+      ],
+      "intensity_shift": 0.1,
+      "elastic_alpha": 0,
+      "elastic_sigma": 4,
+      "horizontal_flip": false
+    }
+  },
+  "git_commit": "fd05d7b",
+  "what_to_check": [
+    "Esophagus 3D Dice against E017's 0.229 - this is the point of the run. Also check the predicted/GT volume ratio: does it move off 0.15-0.60 toward 1.0?",
+    "Aorta 3D Dice against E017's 0.667: augmentation must not cost the new class.",
+    "Heart and trachea against E017 (0.900 / 0.664) and E014_hu_wide (0.885 / 0.653): identical labels, so any move beyond ~0.02 is a real effect.",
+    "Patient_15, E017's worst case on both organs (esophagus 0.000, aorta 0.537): does augmentation recover any of it?",
+    "Train/val gap in dice_tra.npy vs dice_val.npy at the last epoch, against E017's."
+  ]
+}

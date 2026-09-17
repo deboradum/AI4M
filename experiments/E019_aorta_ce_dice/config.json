@@ -1,0 +1,65 @@
+{
+  "exp_id": "E019_aorta_ce_dice",
+  "parent_id": "E017_aorta_huwide",
+  "status": "registered",
+  "runtime_config": "configs/E019_aorta_ce_dice.yaml",
+  "runtime_results": "results/E019_aorta_ce_dice",
+  "runtime_volumes": "volumes/E019_aorta_ce_dice",
+  "change": "E017_aorta_huwide with loss_fn 'ce_dice': cross-entropy plus a soft Dice term over all five classes, instead of plain cross-entropy. Loss is the only changed variable; the 4-organ target, split, seed, epochs, lr and batch size are identical to E017.",
+  "hypothesis": "E017's failure mode is systemic under-segmentation of thin/small structures (esophagus predicted/GT volume 0.15-0.60 on every validation patient; Patient_15 aorta 43 % captured). Plain cross-entropy is dominated by the background and penalises a missed thin organ only through per-voxel error, whereas a soft Dice term optimises region overlap directly. Expect esophagus and Patient_15's aorta to improve; the Dice term is averaged over all five classes, and classes absent from both prediction and target contribute roughly zero loss, so the phantom-class artefact of the folded data is not reintroduced.",
+  "plan_reference": "AORTA_INSPECTION/aorta-findings.md; full_plan.md section 3 (aorta) superseded for a recoverable label",
+  "dataset": {
+    "name": "SEGTHOR_aorta_huwide",
+    "source": "segthor_part1 (GT class 1 split back into esophagus + aorta)",
+    "split": {
+      "training_patients": 15,
+      "validation_patients": 5,
+      "retains": 5,
+      "seed": 0,
+      "fold": 0
+    },
+    "resolution": [
+      256,
+      256
+    ],
+    "classes": [
+      "background",
+      "esophagus",
+      "heart",
+      "trachea",
+      "aorta"
+    ],
+    "label_caveat": "Derived, not annotated: the split is validated by Dice 0.9994/0.9980 against the single reference patient (Patient_07 GT2) and by four geometric gates plus visual review on the other 19."
+  },
+  "model": {
+    "name": "ENet",
+    "kernels": 8,
+    "factor": 2,
+    "in_slices": 1
+  },
+  "training": {
+    "mode": "full",
+    "loss": "CrossEntropy",
+    "optimizer": "Adam",
+    "learning_rate": 0.0005,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "batch_size": 8,
+    "epochs": 25,
+    "temperature": 1,
+    "patience": -1,
+    "seed": 123,
+    "scheduler": null,
+    "augmentation": null
+  },
+  "git_commit": "fd05d7b",
+  "what_to_check": [
+    "Esophagus 3D Dice against E017's 0.229 and the predicted/GT volume ratio against 0.15-0.60.",
+    "Patient_15 aorta against E017's 0.537 (43 % of a 250470-voxel target captured).",
+    "Aorta mean against 0.667, heart/trachea against 0.900 / 0.664 - the Dice term must not trade the easy classes away.",
+    "check_labels.py --dice_npy: 'main.py:321 mean' must still equal 'mean over classes with GT' (no empty class in the selection mean).",
+    "Loss magnitude: CEDiceLoss adds 1 - mean Dice to the CE value, so loss_val.npy is on a different scale than E017's - compare Dice, not loss."
+  ]
+}
