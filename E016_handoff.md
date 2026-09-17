@@ -129,7 +129,11 @@ cp ~/.omp/run/daemons/*/daemons/e016-train/output.log results/E016_aug_noelastic
   --class_names background esophagus heart trachea aorta \
   --dest results/E016_aug_noelastic/metrics3d --process 4
 ```
-   Aorta = n/a (absent from segthor_part1).
+   In the archive the E001–E016 runs used (`segthor_part1.zip` sha256 `6c203831…`), the aorta
+   has no class of its own: `GT.nii.gz` class 1 is esophagus ∪ aorta (`Patient_07/GT2.nii.gz`
+   separates them: 25373 + 89856 = 115229 = class-1 voxels). `retrieve_aorta.py` writes a
+   4-organ GT to `data/SEGTHOR_aorta/`; run `check_labels.py` before any new run.
+   See `AORTA_INSPECTION/aorta-findings.md`.
 
 ## Success criteria (the actual experiment result)
 
