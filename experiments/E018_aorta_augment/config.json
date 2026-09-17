@@ -1,7 +1,7 @@
 {
   "exp_id": "E018_aorta_augment",
   "parent_id": "E017_aorta_huwide",
-  "status": "registered",
+  "status": "complete",
   "runtime_config": "configs/E018_aorta_augment.yaml",
   "runtime_results": "results/E018_aorta_augment",
   "runtime_volumes": "volumes/E018_aorta_augment",
@@ -64,12 +64,79 @@
       "horizontal_flip": false
     }
   },
-  "git_commit": "fd05d7b",
+  "git_commit": "c48e27a",
   "what_to_check": [
     "Esophagus 3D Dice against E017's 0.229 - this is the point of the run. Also check the predicted/GT volume ratio: does it move off 0.15-0.60 toward 1.0?",
     "Aorta 3D Dice against E017's 0.667: augmentation must not cost the new class.",
     "Heart and trachea against E017 (0.900 / 0.664) and E014_hu_wide (0.885 / 0.653): identical labels, so any move beyond ~0.02 is a real effect.",
     "Patient_15, E017's worst case on both organs (esophagus 0.000, aorta 0.537): does augmentation recover any of it?",
     "Train/val gap in dice_tra.npy vs dice_val.npy at the last epoch, against E017's."
-  ]
+  ],
+  "results": {
+    "epochs_completed": 25,
+    "best_epoch_by_validation_dice": 23,
+    "training": {
+      "total_minutes": 44.1,
+      "seconds_per_epoch": 97.77,
+      "device": "mps (Apple silicon, local)",
+      "parameter_count": 284003
+    },
+    "inference": {
+      "seconds_per_patient": 4.968,
+      "device": "cpu\n",
+      "validation_patients": 5
+    },
+    "metrics_3d": {
+      "dice_mean": {
+        "esophagus": 0.134,
+        "heart": 0.905,
+        "trachea": 0.661,
+        "aorta": 0.724,
+        "foreground_mean": 0.606
+      },
+      "hd95_mm_mean": {
+        "esophagus": 60.215,
+        "heart": 19.361,
+        "trachea": 21.856,
+        "aorta": 13.937
+      },
+      "assd_mm_mean": {
+        "esophagus": 19.635,
+        "heart": 3.62,
+        "trachea": 3.732,
+        "aorta": 3.739
+      },
+      "nsd_mean": {
+        "esophagus": 0.189,
+        "heart": 0.455,
+        "trachea": 0.535,
+        "aorta": 0.456
+      }
+    },
+    "comparison_to_parent": {
+      "parent": "E017_aorta_huwide",
+      "protocol": "identical data/split/seed/epochs; augmentation is the only changed variable",
+      "dice_delta": {
+        "esophagus": -0.095,
+        "heart": 0.005,
+        "trachea": -0.003,
+        "aorta": 0.057
+      },
+      "foreground_mean_delta": -0.009,
+      "interpretation": "Hypothesis REJECTED on the organ it targeted. Augmentation with elastic disabled raises the aorta (0.724 vs 0.667) and holds heart/trachea, but the thin esophagus gets worse, not better: 3D 0.134 vs 0.229, 2D present-only 0.158 vs 0.266, and the predicted/GT volume ratio falls from 0.15-0.60 to 0.12-0.28. Rotation +-15 deg and scale 0.9-1.1 warp a 5-10 voxel tube; the invariance the model buys costs it exactly the structure it was supposed to recover.",
+      "undertraining_caveat": "The run is probably undertrained rather than purely worse: augmentation lowers the training 2D Dice to 0.794 at the last epoch against E017's 0.885, and the train/val gap collapses from 0.122 to 0.030. E015's lesson was the same (augmentation needs more epochs; E016 was set to 50). A 50-epoch repeat is the fair test of augmentation on this target, not this 25-epoch run."
+    },
+    "notes": [
+      "Train/val gap: train 0.794 vs val 0.764 at the last epoch (E017: 0.885 vs 0.763). Augmentation does suppress overfitting as intended; 25 epochs is then too short to converge.",
+      "Patient_15 remains the worst case for the esophagus (Dice 0.000, 21 % of the target volume) but its aorta improves to 0.590 from E017's 0.537.",
+      "Heart 0.905 (+0.005) and trachea 0.661 (-0.003) are inside seed noise on 5 validation patients; the aorta and esophagus moves are not.",
+      "Elastic was deliberately disabled (E015 collapsed the thin trachea with it); this run therefore does NOT test the plan-1.5 parameters as written, and says nothing about them.",
+      "Heart/trachea comparable with every earlier run; esophagus only with runs on data/SEGTHOR_aorta."
+    ],
+    "artifacts": {
+      "metrics_3d": "results/E018_aorta_augment/metrics3d/metrics.csv",
+      "prediction_volumes": "volumes/E018_aorta_augment/nii/",
+      "training_log": "results/E018_aorta_augment/train.log"
+    }
+  }
 }
