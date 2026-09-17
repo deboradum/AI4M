@@ -1,0 +1,32 @@
+# E017_aorta_huwide: E014_hu_wide on the aorta-recovered 4-organ ground truth.
+#
+# The archive the E001-E016 runs used labels the aorta but folds it into class 1
+# (class 1 = esophagus UNION aorta; Patient_07/GT2.nii.gz separates them:
+# 25373 + 89856 = 115229). retrieve_aorta.py rewrites that class 1 into
+# esophagus (1) + aorta (4); make data/SEGTHOR_aorta_huwide slices it with the
+# same window and the same 15/5 split as E014_hu_wide.
+#
+# The only change against E014_hu_wide is the label. K stays 5 because the
+# challenge convention already reserves class 4 for the aorta, so the network,
+# the output dimension and every optimization setting are unchanged.
+# Comparability: heart and trachea labels are voxel-identical to SEGTHOR_huwide
+# (verified over all 3732 slices; the only label transition is 1 -> 4), so those
+# two Dice stay comparable. Esophagus is NOT comparable across the two datasets:
+# its target is now the thin organ alone instead of the fold.
+dataset: "SEGTHOR_aorta_huwide"
+mode: "full"
+loss_fn: "ce"
+K: 5
+net_name: "ENet"
+B: 8
+kernels: 8
+factor: 2
+lr: 0.0005
+betas: [0.9, 0.999]
+epochs: 25
+num_workers: 5
+temperature: 1.0
+optimizer: "Adam"
+seed: 123
+patience: -1
+in_slices: 1

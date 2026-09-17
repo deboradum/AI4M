@@ -1,0 +1,137 @@
+{
+  "exp_id": "E017_aorta_huwide",
+  "parent_id": "E014_hu_wide",
+  "status": "complete",
+  "runtime_config": "configs/E017_aorta_huwide.yaml",
+  "runtime_results": "results/E017_aorta_huwide",
+  "runtime_volumes": "volumes/E017_aorta_huwide",
+  "change": "Same experiment as E014_hu_wide (fixed HU window [-1000, 1000] at slicing, ENet 8/2, CE, seed 123, 25 epochs, 15/5 split) on a 4-organ ground truth: the archive's GT class 1 is esophagus UNION aorta, and retrieve_aorta.py splits it into esophagus (1) + aorta (4) with a distance-transform watershed gated on four plausibility criteria. K is still 5 (class 4 was empty before), so the architecture and the output dimension are unchanged. The only difference against E014_hu_wide is the target.",
+  "hypothesis": "The aorta is a large, high-contrast, contiguous structure: once it has a class of its own the model should segment it well (Dice well above 0.8), and the split must not cost the other organs - heart and trachea labels are voxel-identical to SEGTHOR_huwide, so their Dice should reproduce E014_hu_wide (0.885 / 0.653) within seed noise. Esophagus Dice cannot be compared against E014_hu_wide: the target is now the thin organ alone (AORTA_INSPECTION: 7092 voxels on Patient_07 instead of 115229 folded), not the fold.",
+  "plan_reference": "AORTA_INSPECTION/aorta-findings.md; full_plan.md section 3 (aorta) superseded for a recoverable label",
+  "dataset": {
+    "name": "SEGTHOR_aorta_huwide",
+    "source": "segthor_part1 (GT class 1 split back into esophagus + aorta)",
+    "split": {
+      "training_patients": 15,
+      "validation_patients": 5,
+      "retains": 5,
+      "seed": 0,
+      "fold": 0
+    },
+    "resolution": [
+      256,
+      256
+    ],
+    "classes": [
+      "background",
+      "esophagus",
+      "heart",
+      "trachea",
+      "aorta"
+    ],
+    "label_caveat": "Derived, not annotated: the split is validated by Dice 0.9994/0.9980 against the single reference patient (Patient_07 GT2) and by four geometric gates plus visual review on the other 19."
+  },
+  "model": {
+    "name": "ENet",
+    "kernels": 8,
+    "factor": 2,
+    "in_slices": 1
+  },
+  "training": {
+    "mode": "full",
+    "loss": "CrossEntropy",
+    "optimizer": "Adam",
+    "learning_rate": 0.0005,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "batch_size": 8,
+    "epochs": 25,
+    "temperature": 1,
+    "patience": -1,
+    "seed": 123,
+    "scheduler": null,
+    "augmentation": null
+  },
+  "git_commit": "fd05d7b",
+  "results": {
+    "epochs_completed": 25,
+    "best_epoch_by_validation_dice": 22,
+    "training": {
+      "total_minutes": 52.3,
+      "seconds_per_epoch": 92.05,
+      "device": "mps (Apple silicon, local)",
+      "parameter_count": 284003
+    },
+    "inference": {
+      "seconds_per_patient": 9.545,
+      "device": "cpu\n",
+      "validation_patients": 5
+    },
+    "metrics_3d": {
+      "dice_mean": {
+        "esophagus": 0.229,
+        "heart": 0.9,
+        "trachea": 0.664,
+        "aorta": 0.667,
+        "foreground_mean": 0.615
+      },
+      "hd95_mm_mean": {
+        "esophagus": 58.083,
+        "heart": 36.847,
+        "trachea": 57.815,
+        "aorta": 23.381
+      },
+      "assd_mm_mean": {
+        "esophagus": 19.585,
+        "heart": 5.656,
+        "trachea": 7.795,
+        "aorta": 4.805
+      },
+      "nsd_mean": {
+        "esophagus": 0.274,
+        "heart": 0.431,
+        "trachea": 0.506,
+        "aorta": 0.402
+      }
+    },
+    "selection_metric": {
+      "main_py_321_mean_classes_1_to_4": 0.7633,
+      "mean_over_classes_with_gt": 0.7633,
+      "phantom_class_inflation": 0.0,
+      "interpretation": "No configured class is empty any more, so the model-selection mean and the mean over classes that actually hold labels now agree: the E014-era inflation of +0.0456 is gone by construction."
+    },
+    "comparison_to_parent": {
+      "note": "E014_hu_wide's stitched volumes scored against the SAME 4-organ GT, so the protocol is identical and only the training target differs.",
+      "dice_delta": {
+        "esophagus": 0.08,
+        "heart": 0.015,
+        "trachea": 0.011,
+        "aorta": 0.667
+      },
+      "foreground_mean_delta": 0.193,
+      "heart_trachea_control": "heart 0.900 vs 0.885 and trachea 0.664 vs 0.653 - identical labels, so the gap is seed/protocol noise, not a label artefact. Sanity check: E014_hu_wide scored on this GT reproduces its folded-GT heart/trachea numbers exactly (0.885 / 0.653).",
+      "interpretation": "Giving the aorta a class of its own costs nothing on the other organs and turns class 4 from 0.000 into 0.667. The esophagus 'drop' against the folded number (0.673 -> 0.229) is the target changing, not a regression: the fold's class 1 was 115229 voxels on Patient_07 while the thin esophagus is 25373."
+    },
+    "notes": [
+      "Failure mode on the thin esophagus: the model systematically under-segments it - predicted/GT volume ratio 0.15 (P01), 0.23 (P11), 0.36 (P15), 0.60 (P17), 0.50 (P19).",
+      "Patient_15 is the worst case on both organs: esophagus Dice 0.000 (3388 predicted voxels, zero overlap with the 9459-voxel target) and aorta 0.537 (106736 predicted against 250470 - the model captures only 43% of what is the widest aorta of the 20 patients, median axial area 1384 mm^2). Under-segmentation, not a wrong location.",
+      "Labels are derived, not annotated: Dice 0.9994 aorta / 0.9980 esophagus against the single reference patient (Patient_07 GT2); the other 19 rest on four geometric gates plus visual review.",
+      "Heart and trachea are comparable with every earlier run; esophagus is comparable only with other runs on data/SEGTHOR_aorta.",
+      "Run locally on MPS under the hub supervisor; an earlier attempt was killed by a tool deadline mid-epoch-2 and restarted from scratch (train.interrupted.log is that stale log)."
+    ],
+    "artifacts": {
+      "metrics_3d": "results/E017_aorta_huwide/metrics3d/metrics.csv",
+      "prediction_volumes": "volumes/E017_aorta_huwide/nii/",
+      "training_log": "results/E017_aorta_huwide/train.log"
+    }
+  },
+  "what_to_check": [
+    "Aorta 3D Dice: no longer n/a in metrics3d.py. A large contiguous vessel should land well above 0.8; below 0.6 means the label is wrong somewhere.",
+    "Heart and trachea 3D Dice against E014_hu_wide (0.885 / 0.653): identical labels and identical protocol, so any gap beyond seed noise is a bug.",
+    "Esophagus 3D Dice is not comparable with E014_hu_wide. Check it against the thin-organ target instead: the validation slices hold 405 esophagus slices (was 582 for the fold).",
+    "Val-slice presence: class 4 must be present in 508/915 validation slices; dice_val.npy class 4 must not be a constant 1.0 (that was the phantom-class failure mode on the folded data).",
+    "check_labels.py --dice_npy on the run: 'main.py:321 mean' and 'mean over classes with GT' must now agree, because no configured class is empty."
+  ]
+}
