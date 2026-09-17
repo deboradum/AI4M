@@ -1,7 +1,7 @@
 {
   "exp_id": "E019_aorta_ce_dice",
   "parent_id": "E017_aorta_huwide",
-  "status": "registered",
+  "status": "complete",
   "runtime_config": "configs/E019_aorta_ce_dice.yaml",
   "runtime_results": "results/E019_aorta_ce_dice",
   "runtime_volumes": "volumes/E019_aorta_ce_dice",
@@ -54,12 +54,87 @@
     "scheduler": null,
     "augmentation": null
   },
-  "git_commit": "fd05d7b",
+  "git_commit": "c89ebc6",
   "what_to_check": [
     "Esophagus 3D Dice against E017's 0.229 and the predicted/GT volume ratio against 0.15-0.60.",
     "Patient_15 aorta against E017's 0.537 (43 % of a 250470-voxel target captured).",
     "Aorta mean against 0.667, heart/trachea against 0.900 / 0.664 - the Dice term must not trade the easy classes away.",
     "check_labels.py --dice_npy: 'main.py:321 mean' must still equal 'mean over classes with GT' (no empty class in the selection mean).",
     "Loss magnitude: CEDiceLoss adds 1 - mean Dice to the CE value, so loss_val.npy is on a different scale than E017's - compare Dice, not loss."
-  ]
+  ],
+  "results": {
+    "epochs_completed": 25,
+    "best_epoch_by_validation_dice": 24,
+    "training": {
+      "total_minutes": 54.5,
+      "seconds_per_epoch": 96.48,
+      "device": "mps (Apple silicon, local)",
+      "parameter_count": 284003,
+      "train_2d_dice_last_epoch": 0.861,
+      "val_2d_dice_last_epoch": 0.795
+    },
+    "inference": {
+      "seconds_per_patient": 10.727,
+      "device": "cpu\n",
+      "validation_patients": 5
+    },
+    "metrics_3d": {
+      "dice_mean": {
+        "esophagus": 0.428,
+        "heart": 0.886,
+        "trachea": 0.787,
+        "aorta": 0.672,
+        "foreground_mean": 0.693
+      },
+      "hd95_mm_mean": {
+        "esophagus": 53.093,
+        "heart": 18.768,
+        "trachea": 33.218,
+        "aorta": 19.491
+      },
+      "assd_mm_mean": {
+        "esophagus": 12.598,
+        "heart": 3.952,
+        "trachea": 3.576,
+        "aorta": 5.181
+      },
+      "nsd_mean": {
+        "esophagus": 0.417,
+        "heart": 0.395,
+        "trachea": 0.722,
+        "aorta": 0.458
+      }
+    },
+    "comparison_to_parent": {
+      "parent": "E017_aorta_huwide",
+      "protocol": "identical data/split/seed/epochs; the loss is the only changed variable",
+      "dice_delta": {
+        "esophagus": 0.199,
+        "heart": -0.014,
+        "trachea": 0.123,
+        "aorta": 0.005
+      },
+      "foreground_mean_delta": 0.078,
+      "vs_sibling_augmentation": {
+        "esophagus": 0.294,
+        "heart": -0.019,
+        "trachea": 0.126,
+        "aorta": -0.052
+      },
+      "interpretation": "Hypothesis confirmed, and by more than expected. The Dice term roughly doubles the esophagus (0.229 -> 0.428) and lifts the trachea (0.664 -> 0.787) while leaving heart (0.886 vs 0.900) and aorta (0.672 vs 0.667) essentially unchanged. Both thin structures - the two classes that cross-entropy left under-segmented - improve, which is exactly what a region-overlap term predicts. Boundary metrics improve too: heart HD95 36.8 -> 18.8 mm, trachea 57.8 -> 33.2 mm.",
+      "under_segmentation_fixed": "The predicted/GT volume ratio moves from 0.15-0.60 (E017, every patient under-segmenting) to 0.44-0.92 on three patients and over-segmentation on the two worst (Patient_15 1.86, Patient_19 1.42). The systematic bias is gone; what remains is per-patient localisation error."
+    },
+    "notes": [
+      "Best aorta run so far on fg mean (0.693 vs E017 0.615 and E018 0.606) and the best on the two thin classes.",
+      "Patient_15's esophagus is still broken, but the failure changed shape: E017/018 missed it entirely (Dice 0.000, 15-21 % of the target volume), E019 predicts 1.86x the target volume with Dice 0.021, i.e. it now finds plenty of esophagus-shaped tissue in the wrong place. Localisation, not detection.",
+      "Heart drops 0.014 against E017 and trachea gains 0.123: the Dice term rebalances capacity toward the small classes, as intended.",
+      "Loss scale is not comparable with E017: CEDiceLoss returns CE + (1 - mean Dice), so loss_val.npy is offset by roughly 1. Compare Dice, never loss.",
+      "Heart and trachea comparable with every earlier run; esophagus only with runs on data/SEGTHOR_aorta. Labels are derived, not annotated."
+    ],
+    "artifacts": {
+      "metrics_3d": "results/E019_aorta_ce_dice/metrics3d/metrics.csv",
+      "prediction_volumes": "volumes/E019_aorta_ce_dice/nii/",
+      "training_log": "results/E019_aorta_ce_dice/train.log"
+    }
+  }
 }
