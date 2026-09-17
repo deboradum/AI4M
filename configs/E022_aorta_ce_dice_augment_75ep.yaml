@@ -1,0 +1,45 @@
+# E022_aorta_ce_dice_augment_75ep: combine the two levers that each helped alone.
+#
+# E019 proved the loss (ce_dice: esophagus 0.229 -> 0.428, trachea 0.664 -> 0.787)
+# at 25 epochs without augmentation. E020 proved the schedule+augmentation
+# (esophagus 0.134 -> 0.424, trachea 0.661 -> 0.746, aorta 0.746, foreground mean
+# 0.706 - the best in the project) at 50 epochs with plain cross-entropy. Scored
+# on the same 4-organ GT the two are complementary rather than redundant:
+# esophagus a tie, E019 wins trachea (+0.041), E020 wins heart (+0.021) and aorta
+# (+0.074).
+#
+# This run stacks them and extends the budget. The extension is evidence-driven:
+# E020's best epoch was 48 of 50 and its selection curve was still rising, and
+# E006_cosine_50 (the orphaned 50-epoch run) peaked at epoch 46 of 50 as well, so
+# 75 epochs at a constant learning rate tests whether the ceiling is the schedule
+# or the epoch budget. Everything else - 4-organ target, split, seed 123, lr
+# 5e-4, batch 8, ENet 8/2, elastic disabled - is identical to E020.
+#
+# num_workers is 0 on purpose: augmentation combined with workers=5 is exactly
+# what crashed E015 in the DataLoader. E018 and E020 (augmentation) both ran
+# with 0, while E019 ran ce_dice with 5 and no augmentation. This run has
+# augmentation, so it follows E018/E020.
+dataset: "SEGTHOR_aorta_huwide"
+mode: "full"
+loss_fn: "ce_dice"
+K: 5
+net_name: "ENet"
+B: 8
+kernels: 8
+factor: 2
+lr: 0.0005
+betas: [0.9, 0.999]
+epochs: 75
+num_workers: 0
+temperature: 1.0
+optimizer: "Adam"
+seed: 123
+patience: -1
+in_slices: 1
+augment: true
+aug_rotation: 15.0
+aug_scale_min: 0.9
+aug_scale_max: 1.1
+aug_intensity: 0.1
+aug_elastic_alpha: 0.0
+aug_elastic_sigma: 4.0
