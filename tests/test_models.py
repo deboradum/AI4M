@@ -17,7 +17,7 @@ def config_for(net_name: str, *, in_slices: int = 1, kernels: int = 8, factor: i
                        B=8, kernels=kernels, factor=factor, lr=0.0005,
                        betas=(0.9, 0.999), epochs=25, num_workers=0,
                        temperature=1.0, optimizer="Adam", seed=123, patience=-1,
-                       in_slices=in_slices)
+                       in_slices=in_slices, loss_fn="ce")
 
 
 class TestModels(unittest.TestCase):
