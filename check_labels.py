@@ -173,7 +173,8 @@ def diff(a_path: Path, b_path: Path, K: int, class_names: list[str]) -> dict:
             conf[va, vb] = int(((a == va) & (b == vb)).sum())
 
     print(f"\nconfusion: rows {a_path.name}, cols {b_path.name}")
-    print(f"{'A\\\\B':>8s}" + "".join(f"{class_names[k]:>12s}" for k in range(K)))
+    row_column_label = "A\\B"
+    print(f"{row_column_label:>8s}" + "".join(f"{class_names[k]:>12s}" for k in range(K)))
     for va in range(K):
         print(f"{class_names[va]:>8s}" + "".join(f"{conf[va, vb]:>12d}" for vb in range(K)))
 
