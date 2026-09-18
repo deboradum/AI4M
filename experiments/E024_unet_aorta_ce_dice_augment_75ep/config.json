@@ -1,0 +1,42 @@
+{
+  "exp_id": "E024_unet_aorta_ce_dice_augment_75ep",
+  "parent_id": "E022_aorta_ce_dice_augment_75ep",
+  "status": "registered",
+  "runtime_config": "configs/E024_unet_aorta_ce_dice_augment_75ep.yaml",
+  "runtime_results": "results/E024_unet_aorta_ce_dice_augment_75ep",
+  "runtime_volumes": "volumes/E024_unet_aorta_ce_dice_augment_75ep",
+  "change": "E022 with ENet replaced by the plain 2D U-Net from E010. All non-model settings are identical: recovered four-organ HU-windowed data and split, CE+Dice loss, augmentation with elastic disabled, 75 epochs, batch size 8, lr 5e-4, seed 123, one-slice input, and num_workers 0.",
+  "hypothesis": "The U-Net's skip connections and much larger capacity improve or at least match E022's four-organ performance when every other training variable is fixed.",
+  "plan_reference": "Controlled model-capacity comparison against E022",
+  "dataset": {
+    "name": "SEGTHOR_aorta_huwide",
+    "source": "segthor_part1 (GT class 1 split back into esophagus + aorta)",
+    "split": {"training_patients": 15, "validation_patients": 5, "retains": 5, "seed": 0, "fold": 0},
+    "resolution": [256, 256],
+    "window_hu": [-1000, 1000],
+    "classes": ["background", "esophagus", "heart", "trachea", "aorta"],
+    "label_caveat": "Derived, not annotated; see the E017/E022 records and AORTA_INSPECTION for validation of the recovered aorta label."
+  },
+  "model": {
+    "name": "UNet", "base_channels": 32, "levels": 4,
+    "encoder_channels": [32, 64, 128, 256], "bottleneck_channels": 512,
+    "normalization": "BatchNorm2d", "activation": "PReLU",
+    "downsampling": "2x2 MaxPool2d", "upsampling": "2x2 ConvTranspose2d",
+    "in_slices": 1, "parameter_count": 7762135
+  },
+  "training": {
+    "mode": "full", "loss": "CEDiceLoss", "optimizer": "Adam",
+    "learning_rate": 0.0005, "betas": [0.9, 0.999], "batch_size": 8,
+    "epochs": 75, "temperature": 1.0, "patience": -1, "seed": 123,
+    "scheduler": null, "num_workers": 0,
+    "augmentation": {"rotation_deg": 15.0, "scale": [0.9, 1.1], "intensity_shift": 0.1,
+                     "elastic_alpha": 0.0, "elastic_sigma": 4.0, "horizontal_flip": false}
+  },
+  "what_to_check": [
+    "The preflight output must initialize CEDiceLoss and execute one augmented batch on CUDA.",
+    "Compare all 3D metrics and per-patient Dice directly with E022: dataset, split, loss, augmentation, epoch budget, seed, and batch size are fixed.",
+    "Report model capacity and training time alongside accuracy: U-Net has 7,762,135 parameters versus E022 ENet's 284,003.",
+    "Inspect Patient_15 esophagus, the persistent thin-organ failure in E017 through E023."
+  ],
+  "results": null
+}
