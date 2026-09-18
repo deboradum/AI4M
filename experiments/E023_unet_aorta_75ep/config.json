@@ -37,5 +37,34 @@
     "Do not compare esophagus Dice directly with E010: its class 1 is esophagus plus aorta, while this target is the thin esophagus alone.",
     "Interpret comparison with E017 as descriptive only: E017 uses ENet and 25 epochs, while this run changes architecture and budget."
   ],
-  "results": null
+  "git_commit": "c74ffa1",
+  "results": {
+    "epochs_completed": 75,
+    "best_epoch_by_validation_dice": 29,
+    "training": {
+      "device": "NVIDIA H100",
+      "parameter_count": 7762135,
+      "total_minutes": 79.15,
+      "train_seconds": 2459.3,
+      "validation_seconds": 2289.61
+    },
+    "inference": {
+      "validation_patients": 5,
+      "seconds_per_patient_forward_and_stitch": 1.72
+    },
+    "metrics_3d": {
+      "dice_mean": {"esophagus": 0.471, "heart": 0.903, "trachea": 0.833, "aorta": 0.801, "foreground_mean": 0.752},
+      "iou_mean": {"esophagus": 0.336, "heart": 0.824, "trachea": 0.716, "aorta": 0.679, "foreground_mean": 0.639},
+      "hd95_mm_mean": {"esophagus": 53.864, "heart": 11.902, "trachea": 25.697, "aorta": 23.667, "foreground_mean": 28.782},
+      "assd_mm_mean": {"esophagus": 12.472, "heart": 3.382, "trachea": 2.464, "aorta": 3.253, "foreground_mean": 5.393},
+      "nsd_mean": {"esophagus": 0.470, "heart": 0.474, "trachea": 0.806, "aorta": 0.681, "foreground_mean": 0.608}
+    },
+    "interpretation": "E023 reaches a four-organ foreground Dice of 0.752. It is close to E022's 0.757, with higher trachea (0.833 vs 0.820) and aorta (0.801 vs 0.796), while E022 remains higher on esophagus (0.491 vs 0.471) and heart (0.921 vs 0.903). This is descriptive, not a causal architecture comparison: E023 uses U-Net plus CE with no augmentation, while E022 uses ENet plus CE+Dice and augmentation. Patient_15 remains the dominant esophagus failure (Dice 0.011, HD95 152.7 mm).",
+    "artifacts": {
+      "metrics_3d": "results/E023_unet_aorta_75ep/metrics3d/metrics.csv",
+      "prediction_volumes": "volumes/E023_unet_aorta_75ep/nii/",
+      "training_log": "results/E023_unet_aorta_75ep/slurm-26886867.out",
+      "inference_log": "volumes/E023_unet_aorta_75ep/slurm-26892322.out"
+    }
+  }
 }
