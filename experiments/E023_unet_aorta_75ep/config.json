@@ -1,0 +1,41 @@
+{
+  "exp_id": "E023_unet_aorta_75ep",
+  "parent_id": "E010_unet2d",
+  "status": "registered",
+  "runtime_config": "configs/E023_unet_aorta_75ep.yaml",
+  "runtime_results": "results/E023_unet_aorta_75ep",
+  "runtime_volumes": "volumes/E023_unet_aorta_75ep",
+  "change": "Rerun E010's plain 2D U-Net on the recovered four-organ, HU-windowed dataset. The U-Net architecture, CE loss, optimizer, batch size, seed, one-slice input, and disabled augmentation remain E010's. The dataset changes to SEGTHOR_aorta_huwide and the maximum epoch budget changes from 25 to 75; early stopping remains disabled.",
+  "hypothesis": "The E010 U-Net architecture should remain viable when the aorta is represented as its own target class. This run establishes four-organ performance under the recovered-label protocol; it is not a single-variable comparison with either E010 or E017.",
+  "plan_reference": "E010 model-capacity rerun on the recovered-aorta data protocol introduced by E017",
+  "dataset": {
+    "name": "SEGTHOR_aorta_huwide",
+    "source": "segthor_part1 (GT class 1 split back into esophagus + aorta)",
+    "split": {"training_patients": 15, "validation_patients": 5, "retains": 5, "seed": 0, "fold": 0},
+    "resolution": [256, 256],
+    "window_hu": [-1000, 1000],
+    "classes": ["background", "esophagus", "heart", "trachea", "aorta"],
+    "label_caveat": "Derived, not annotated: retrieve_aorta.py splits class 1. Patient_07 is checked against GT2; other patients pass geometric gates and visual review."
+  },
+  "model": {
+    "name": "UNet", "base_channels": 32, "levels": 4,
+    "encoder_channels": [32, 64, 128, 256], "bottleneck_channels": 512,
+    "normalization": "BatchNorm2d", "activation": "PReLU",
+    "downsampling": "2x2 MaxPool2d", "upsampling": "2x2 ConvTranspose2d",
+    "in_slices": 1, "parameter_count": 7762135
+  },
+  "training": {
+    "mode": "full", "loss": "CrossEntropy", "optimizer": "Adam",
+    "learning_rate": 0.0005, "betas": [0.9, 0.999], "batch_size": 8,
+    "epochs": 75, "temperature": 1.0, "patience": -1, "seed": 123,
+    "scheduler": null, "augmentation": false, "num_workers": 5
+  },
+  "what_to_check": [
+    "Confirm all classes 0 through 4 are present with check_labels.py before training.",
+    "With patience -1, the run must complete all 75 epochs unless the job fails.",
+    "Compute 3D Dice, IoU, HD95, ASSD, and NSD on the five validation patients using recovered GT.",
+    "Do not compare esophagus Dice directly with E010: its class 1 is esophagus plus aorta, while this target is the thin esophagus alone.",
+    "Interpret comparison with E017 as descriptive only: E017 uses ENet and 25 epochs, while this run changes architecture and budget."
+  ],
+  "results": null
+}
