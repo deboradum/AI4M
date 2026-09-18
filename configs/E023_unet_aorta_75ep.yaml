@@ -1,0 +1,21 @@
+# E023_unet_aorta_75ep: rerun the E010 plain 2D U-Net on the recovered
+# four-organ target. The model and optimizer settings are E010's; the data
+# changes to SEGTHOR_aorta_huwide and the budget extends from 25 to 75 epochs.
+dataset: "SEGTHOR_aorta_huwide"
+mode: "full"
+loss_fn: "ce"
+K: 5
+net_name: "UNet"
+B: 8
+kernels: 32
+factor: 4
+lr: 0.0005
+betas: [0.9, 0.999]
+epochs: 75
+num_workers: 5
+temperature: 1.0
+optimizer: "Adam"
+seed: 123
+patience: -1
+in_slices: 1
+augment: false
