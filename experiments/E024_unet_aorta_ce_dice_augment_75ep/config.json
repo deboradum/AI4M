@@ -38,5 +38,36 @@
     "Report model capacity and training time alongside accuracy: U-Net has 7,762,135 parameters versus E022 ENet's 284,003.",
     "Inspect Patient_15 esophagus, the persistent thin-organ failure in E017 through E023."
   ],
-  "results": null
+  "results": {
+    "epochs_completed": 75,
+    "best_epoch_by_validation_dice": 50,
+    "training": {
+      "device": "NVIDIA H100",
+      "parameter_count": 7762135,
+      "total_minutes": 151.64,
+      "best_2d_validation_dice": 0.8705
+    },
+    "inference": {
+      "validation_patients": 5,
+      "seconds_per_patient_forward_and_stitch": 11.262
+    },
+    "metrics_3d": {
+      "dice_mean": {"esophagus": 0.561, "heart": 0.929, "trachea": 0.833, "aorta": 0.802, "foreground_mean": 0.781},
+      "iou_mean": {"esophagus": 0.432, "heart": 0.869, "trachea": 0.715, "aorta": 0.691, "foreground_mean": 0.677},
+      "hd95_mm_mean": {"esophagus": 50.944, "heart": 8.687, "trachea": 20.599, "aorta": 25.905, "foreground_mean": 26.534},
+      "assd_mm_mean": {"esophagus": 11.221, "heart": 2.480, "trachea": 2.392, "aorta": 3.141, "foreground_mean": 4.809},
+      "nsd_mean": {"esophagus": 0.567, "heart": 0.562, "trachea": 0.797, "aorta": 0.717, "foreground_mean": 0.661}
+    },
+    "comparison_to_E022": {
+      "protocol": "All data, split, loss, augmentation, epoch, batch-size, seed, and worker settings are identical; only the architecture differs.",
+      "dice_delta": {"esophagus": 0.070, "heart": 0.008, "trachea": 0.013, "aorta": 0.006, "foreground_mean": 0.024},
+      "interpretation": "U-Net improves the mean Dice of every organ over E022: foreground 0.781 versus 0.757, with the largest gain on esophagus (0.561 versus 0.491). NSD also improves for every organ. Boundary distance is mixed: esophagus and heart improve, while trachea and aorta HD95 are higher. Patient_15 esophagus remains the dominant failure (Dice 0.034, HD95 150.5 mm). This is a controlled single-seed comparison, but the E022 per-patient metrics CSV was not retained locally after artifact cleanup, so no paired significance statistic is claimed."
+    },
+    "artifacts": {
+      "metrics_3d": "results/E024_unet_aorta_ce_dice_augment_75ep/metrics3d/metrics.csv",
+      "prediction_volumes": "volumes/E024_unet_aorta_ce_dice_augment_75ep/nii/",
+      "training_log": "results/E024_unet_aorta_ce_dice_augment_75ep/slurm-26904253.out",
+      "inference_log": "volumes/E024_unet_aorta_ce_dice_augment_75ep/slurm-26927206.out"
+    }
+  }
 }
