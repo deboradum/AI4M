@@ -22,9 +22,8 @@ from torch.utils.data import DataLoader
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from configType import TrainConfig, NETWORKS
-from dataset import SliceDataset
-from losses import CrossEntropy
-from main import img_transform, gt_transform
+from dataset import AugParams, SliceDataset
+from main import build_loss, img_transform, gt_transform, target_classes_for_config
 
 
 def load_config(path: Path) -> TrainConfig:
@@ -43,9 +42,17 @@ def main(config_path: Path) -> None:
             path = root / subset / kind
             assert path.is_dir() and any(path.glob("*.png")), f"Missing PNG data at {path}"
 
+    aug_params = AugParams(rotation_deg=config.aug_rotation,
+                           scale_min=config.aug_scale_min,
+                           scale_max=config.aug_scale_max,
+                           intensity_shift=config.aug_intensity,
+                           elastic_alpha=config.aug_elastic_alpha,
+                           elastic_sigma=config.aug_elastic_sigma)
     dataset = SliceDataset("train", root,
                            img_transform=img_transform,
                            gt_transform=partial(gt_transform, config.K),
+                           augment=config.augment,
+                           aug_params=aug_params,
                            in_slices=config.in_slices)
     loader = DataLoader(dataset, batch_size=min(config.B, 2), num_workers=0, shuffle=False)
     batch = next(iter(loader))
@@ -57,7 +64,7 @@ def main(config_path: Path) -> None:
     net.init_weights()
     optimizer = getattr(torch.optim, config.optimizer)(net.parameters(), lr=config.lr,
                                                          betas=tuple(config.betas))
-    loss_fn = CrossEntropy(idk=list(range(config.K)))
+    loss_fn = build_loss(config, target_classes_for_config(config, config.K))
 
     optimizer.zero_grad()
     logits = net(images)
