@@ -6,6 +6,7 @@ tqdm
 pillow
 scikit-image
 matplotlib
+imageio-ffmpeg
 
 pyyaml
 ipykernel
