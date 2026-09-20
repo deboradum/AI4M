@@ -1,0 +1,45 @@
+# E025_aorta_norm: E001_baseline on the aorta-recovered 4-organ ground truth.
+#
+# E001 is the reproducible baseline every ablation is measured against, but it
+# trained on data/SEGTHOR, where the archive's class 1 is esophagus UNION aorta
+# (Patient_07/GT2.nii.gz separates them: 25373 + 89856 = 115229) and class 4
+# never occurs. That is why every row up to E023 reports "aorta unavailable" and
+# the per-class table has a hole in it.
+#
+# This run repeats E001 exactly - same model, loss, batch size, learning rate,
+# seed, epochs, single-slice input, per-patient min-max normalisation - on
+# data/SEGTHOR_aorta_norm, which is the same preprocessing with retrieve_aorta.py
+# applied to the labels. The only difference against E001 is the target, so the
+# pair E001/E025 isolates the effect of having the aorta as its own class at the
+# baseline setting.
+#
+# Comparability, verified before the run:
+#   - identical filenames in both splits (2817 train / 915 val)
+#   - identical patients: train 02 03 04 05 06 07 08 09 10 12 13 14 16 18 20,
+#     val 01 11 15 17 19 - the same 15/5 fold as E001
+#   - the img/ PNGs are byte-identical between the two datasets (sampled)
+#   - heart (2) and trachea (3) labels are voxel-identical, so their Dice stays
+#     comparable against E001 and E014/every earlier row
+#   - esophagus is NOT comparable against the folded rows: its target is now the
+#     thin organ alone (25373 voxels on Patient_07) instead of the fold
+#     (115229), which is exactly why E014's 0.673 and E017's 0.229 are not a
+#     regression and not the same measurement
+#   - aorta has no baseline value anywhere before E017, so E025 is the first
+#     baseline-setting aorta number
+dataset: "SEGTHOR_aorta_norm"
+mode: "full"
+loss_fn: "ce"
+K: 5
+net_name: "ENet"
+B: 8
+kernels: 8
+factor: 2
+lr: 0.0005
+betas: [0.9, 0.999]
+epochs: 25
+num_workers: 5
+temperature: 1.0
+optimizer: "Adam"
+seed: 123
+patience: -1
+in_slices: 1

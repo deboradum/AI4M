@@ -1,0 +1,53 @@
+# E026_aorta_augment_50ep: E025 + augmentation, the missing baseline arm.
+#
+# The four-organ target now has three of the four cells of the {normalisation} x
+# {augmentation} table:
+#
+#              no aug              aug
+#   min-max    E025 (running)      MISSING  <- this run
+#   HU wide    E017                E020
+#
+# E018/E020/E022 all augment on SEGTHOR_aorta_huwide, so every existing
+# augmentation result with an aorta is confounded with HU clipping. This run
+# fills the cell that separates the two: same four-organ target as E025, same
+# per-patient min-max normalisation, augmentation added and nothing else.
+#
+# Settings are copied from E020_aorta_augment_50ep, which is the experiment this
+# one is read against - the ONLY intended difference between them is `dataset`
+# (min-max against HU wide). In particular:
+#   - epochs 50, not 25. E020's registration records that its 25-epoch parent
+#     E018 was rejected on the esophagus (0.134 against E017's 0.229) purely as
+#     an epoch-budget artefact: training 2D Dice was still 0.794 at the last
+#     epoch and the best epoch was 48 of 50. A 25-epoch augmentation run would
+#     reproduce a result already documented as wrong.
+#   - elastic DISABLED. E015's elastic_alpha 10 collapsed the thin trachea
+#     (0.377 -> 0.081) and the esophagus is thinner still in-plane.
+#   - num_workers 0. E015 crashed in the DataLoader with workers=5 and
+#     augmentation enabled, which is why E018/E020 also run single-process.
+#
+# Comparability against E025: identical dataset, split and every optimisation
+# setting; only `augment` differs, so E025 -> E026 is a clean single variable.
+dataset: "SEGTHOR_aorta_norm"
+mode: "full"
+loss_fn: "ce"
+K: 5
+net_name: "ENet"
+B: 8
+kernels: 8
+factor: 2
+lr: 0.0005
+betas: [0.9, 0.999]
+epochs: 50
+num_workers: 0
+temperature: 1.0
+optimizer: "Adam"
+seed: 123
+patience: -1
+in_slices: 1
+augment: true
+aug_rotation: 15.0
+aug_scale_min: 0.9
+aug_scale_max: 1.1
+aug_intensity: 0.1
+aug_elastic_alpha: 0.0
+aug_elastic_sigma: 4.0

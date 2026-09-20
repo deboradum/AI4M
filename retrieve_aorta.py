@@ -132,7 +132,10 @@ def passes(check: dict) -> bool:
 
 
 def split_once(m: np.ndarray, dt: np.ndarray, thin_area: float,
-               spacing: tuple[float, float, float]) -> tuple[np.ndarray, np.ndarray]:
+               spacing: tuple[float, float, float],
+               trace: dict | None = None) -> tuple[np.ndarray, np.ndarray]:
+    # trace, when given, is filled with the intermediates of this call so a figure
+    # script can draw the shipped pipeline instead of a copy of it.
     # Esophagus candidate: in a slice where class 1 is a single blob the two organs
     # touch, so only slices holding several components can seed the esophagus
     # directly. Everything small enough there can only be the thin tube.
@@ -148,8 +151,15 @@ def split_once(m: np.ndarray, dt: np.ndarray, thin_area: float,
     # Aorta seed: the round thick core of the folded class.
     aorta_seed = largest_component(dt >= CORE_FRAC * dt.max())
 
+    eso_seed = markers = regions = None
     if eso_cand.any():
-        eso_seed = largest_component(eso_cand)
+        # Every qualifying component seeds the esophagus, as aorta-findings.md
+        # documents. Seeding only the largest component silently drops any seed
+        # stretch that no other component connects to, and the watershed then hands
+        # those slices to the aorta: Patient_15 lost its esophagus below z=62 that way
+        # (37 of the 113 slices class 1 occupies), Patient_14 below z=89 and
+        # Patient_19 below z=101.
+        eso_seed = eso_cand
         markers = np.zeros(m.shape, dtype=np.int8)
         markers[aorta_seed] = 1
         markers[eso_seed] = 2
@@ -159,23 +169,36 @@ def split_once(m: np.ndarray, dt: np.ndarray, thin_area: float,
         r_eso = m & (dt <= ESO_MAX_RADIUS)
         r_aorta = m & ~r_eso
 
+    if trace is not None:
+        trace.update(dt=dt, thin_area=thin_area, eso_cand=eso_cand, aorta_seed=aorta_seed,
+                     eso_seed=eso_seed, markers=markers, regions=regions,
+                     basins_aorta=r_aorta, basins_eso=r_eso)
+
     # Role assignment: the smaller median axial area is the esophagus (the aorta is
     # 2.5x to 7.6x larger in every clean case).
-    if median_slice_area(r_eso, spacing) > median_slice_area(r_aorta, spacing):
+    swapped = median_slice_area(r_eso, spacing) > median_slice_area(r_aorta, spacing)
+    if swapped:
         r_aorta, r_eso = r_eso, r_aorta
+    if trace is not None:
+        trace.update(swapped=swapped, roles_aorta=r_aorta, roles_eso=r_eso)
 
     # Hard rule: a class-1 voxel whose inscribed ball is wider than the esophagus can
     # be is aorta, whatever the watershed said.
     eso = r_eso & (dt <= ESO_MAX_RADIUS)
     aorta = m & ~eso
 
+    if trace is not None:
+        trace.update(aorta=aorta, eso=eso)
+
     return aorta, eso
 
 
-def split_patient(m: np.ndarray, spacing: tuple[float, float, float]) \
+def split_patient(m: np.ndarray, spacing: tuple[float, float, float],
+                  trace: dict | None = None) \
         -> tuple[float, np.ndarray, np.ndarray, dict, str]:
     # Sweep the thin-component threshold and keep the first result passing all four
     # gates; if none does, keep the first and flag the patient for human review.
+    # trace is cleared per sweep value so it always holds the shipped threshold.
     dt = distance_transform_edt(m, sampling=spacing)
 
     thin_area = THIN_SWEEP[0]
@@ -183,7 +206,9 @@ def split_patient(m: np.ndarray, spacing: tuple[float, float, float]) \
     check: dict = {}
     ok = False
     for thin_area in THIN_SWEEP:
-        aorta, eso = split_once(m, dt, thin_area, spacing)
+        if trace is not None:
+            trace.clear()
+        aorta, eso = split_once(m, dt, thin_area, spacing, trace)
         check = gates(aorta, eso, spacing)
         ok = passes(check)
         if ok:
