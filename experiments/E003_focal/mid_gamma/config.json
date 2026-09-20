@@ -1,0 +1,115 @@
+{
+  "exp_id": "E003_focalloss_mid_gamma",
+  "parent_id": "E001",
+  "status": "complete",
+  "runtime_config": "configs/losses/E003_focal_mid_gamma.yaml",
+  "runtime_results": "results/",
+  "runtime_volumes": "volumes/",
+  "change": "",
+  "hypothesis": "",
+  "plan_reference": "",
+  "dataset": {
+    "name": "SEGTHOR",
+    "source": "segthor_part1",
+    "split": {
+      "training_patients": 15,
+      "validation_patients": 5,
+      "retains": 5,
+      "seed": 0,
+      "fold": 0
+    },
+    "resolution": [
+      256,
+      256
+    ],
+    "classes": [
+      "background",
+      "esophagus",
+      "heart",
+      "trachea",
+      "aorta"
+    ]
+  },
+  "model": {
+    "name": "ENet",
+    "kernels": 8,
+    "factor": 2,
+    "in_slices": 1
+  },
+  "training": {
+    "mode": "full",
+    "loss": "FocalLoss",
+    "optimizer": "Adam",
+    "learning_rate": 0.001,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "batch_size": 8,
+    "epochs": 25,
+    "temperature": 1,
+    "patience": -1,
+    "seed": 123,
+    "scheduler": null,
+    "augmentation": false,
+    "focal_gamma": 1.0
+  },
+  "git_commit": "",
+  "results": {
+    "epochs_completed": 25,
+    "best_epoch_by_validation_dice": null,
+    "training": {
+      "total_minutes": null,
+      "device": null,
+      "parameter_count": null
+    },
+    "inference": {
+      "seconds_per_patient": null,
+      "device": null,
+      "validation_patients": null
+    },
+    "metrics_3d": {
+      "dice_mean": {
+        "esophagus": null,
+        "heart": null,
+        "trachea": null,
+        "aorta": null,
+        "foreground_mean": null
+      },
+      "hd95_mm_mean": {
+        "esophagus": null,
+        "heart": null,
+        "trachea": null,
+        "aorta": null
+      },
+      "assd_mm_mean": {
+        "esophagus": null,
+        "heart": null,
+        "trachea": null,
+        "aorta": null
+      },
+      "nsd_mean": {
+        "esophagus": null,
+        "heart": null,
+        "trachea": null,
+        "aorta": null
+      }
+    },
+    "comparison_to_parent": {
+      "foreground_mean_dice_delta": null,
+      "dice_delta": {
+        "esophagus": null,
+        "heart": null,
+        "trachea": null
+      },
+      "interpretation": ""
+    },
+    "notes": [],
+    "artifacts": {
+      "metrics_3d": "",
+      "prediction_volumes": ""
+    }
+  },
+  "what_to_check": [],
+  "run_state": "template only - never executed; result fields are null"
+}
