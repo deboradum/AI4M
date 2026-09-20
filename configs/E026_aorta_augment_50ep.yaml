@@ -1,15 +1,15 @@
-# E025_aorta_augment_50ep: E024 + augmentation, the missing baseline arm.
+# E026_aorta_augment_50ep: E025 + augmentation, the missing baseline arm.
 #
 # The four-organ target now has three of the four cells of the {normalisation} x
 # {augmentation} table:
 #
 #              no aug              aug
-#   min-max    E024 (running)      MISSING  <- this run
+#   min-max    E025 (running)      MISSING  <- this run
 #   HU wide    E017                E020
 #
 # E018/E020/E022 all augment on SEGTHOR_aorta_huwide, so every existing
 # augmentation result with an aorta is confounded with HU clipping. This run
-# fills the cell that separates the two: same four-organ target as E024, same
+# fills the cell that separates the two: same four-organ target as E025, same
 # per-patient min-max normalisation, augmentation added and nothing else.
 #
 # Settings are copied from E020_aorta_augment_50ep, which is the experiment this
@@ -25,8 +25,8 @@
 #   - num_workers 0. E015 crashed in the DataLoader with workers=5 and
 #     augmentation enabled, which is why E018/E020 also run single-process.
 #
-# Comparability against E024: identical dataset, split and every optimisation
-# setting; only `augment` differs, so E024 -> E025 is a clean single variable.
+# Comparability against E025: identical dataset, split and every optimisation
+# setting; only `augment` differs, so E025 -> E026 is a clean single variable.
 dataset: "SEGTHOR_aorta_norm"
 mode: "full"
 loss_fn: "ce"

@@ -1,4 +1,4 @@
-# E026_aorta_weighted_ce_dice_50ep: E024 + weighted CE+Dice, weights from the
+# E027_aorta_weighted_ce_dice_50ep: E025 + weighted CE+Dice, weights from the
 # measured training-fold class imbalance.
 #
 # The aorta line of the project has only ever tested region-overlap loss
@@ -31,10 +31,10 @@
 # vector from the target's own frequencies is the more defensible version and is
 # what this run measures.
 #
-# Everything else is E024, so this is a single-variable pair against it:
+# Everything else is E025, so this is a single-variable pair against it:
 # same dataset, split, seed, epochs, cross-entropy-based objective, no
 # augmentation of any kind (augment is false and aug_* are left at their
-# defaults, exactly as in E024).
+# defaults, exactly as in E025).
 dataset: "SEGTHOR_aorta_norm"
 mode: "full"
 loss_fn: "weighted_ce_dice"
