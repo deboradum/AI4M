@@ -52,7 +52,7 @@
     "seed": 123,
     "scheduler": null,
     "augmentation": false,
-    "focal_gamma": 2
+    "focal_gamma": 2.0
   },
   "git_commit": "",
   "results": {
