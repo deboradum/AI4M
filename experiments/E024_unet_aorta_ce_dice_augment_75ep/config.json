@@ -1,0 +1,73 @@
+{
+  "exp_id": "E024_unet_aorta_ce_dice_augment_75ep",
+  "parent_id": "E022_aorta_ce_dice_augment_75ep",
+  "status": "registered",
+  "runtime_config": "configs/E024_unet_aorta_ce_dice_augment_75ep.yaml",
+  "runtime_results": "results/E024_unet_aorta_ce_dice_augment_75ep",
+  "runtime_volumes": "volumes/E024_unet_aorta_ce_dice_augment_75ep",
+  "change": "E022 with ENet replaced by the plain 2D U-Net from E010. All non-model settings are identical: recovered four-organ HU-windowed data and split, CE+Dice loss, augmentation with elastic disabled, 75 epochs, batch size 8, lr 5e-4, seed 123, one-slice input, and num_workers 0.",
+  "hypothesis": "The U-Net's skip connections and much larger capacity improve or at least match E022's four-organ performance when every other training variable is fixed.",
+  "plan_reference": "Controlled model-capacity comparison against E022",
+  "dataset": {
+    "name": "SEGTHOR_aorta_huwide",
+    "source": "segthor_part1 (GT class 1 split back into esophagus + aorta)",
+    "split": {"training_patients": 15, "validation_patients": 5, "retains": 5, "seed": 0, "fold": 0},
+    "resolution": [256, 256],
+    "window_hu": [-1000, 1000],
+    "classes": ["background", "esophagus", "heart", "trachea", "aorta"],
+    "label_caveat": "Derived, not annotated; see the E017/E022 records and AORTA_INSPECTION for validation of the recovered aorta label."
+  },
+  "model": {
+    "name": "UNet", "base_channels": 32, "levels": 4,
+    "encoder_channels": [32, 64, 128, 256], "bottleneck_channels": 512,
+    "normalization": "BatchNorm2d", "activation": "PReLU",
+    "downsampling": "2x2 MaxPool2d", "upsampling": "2x2 ConvTranspose2d",
+    "in_slices": 1, "parameter_count": 7762135
+  },
+  "training": {
+    "mode": "full", "loss": "CEDiceLoss", "optimizer": "Adam",
+    "learning_rate": 0.0005, "betas": [0.9, 0.999], "batch_size": 8,
+    "epochs": 75, "temperature": 1.0, "patience": -1, "seed": 123,
+    "scheduler": null, "num_workers": 0,
+    "augmentation": {"rotation_deg": 15.0, "scale": [0.9, 1.1], "intensity_shift": 0.1,
+                     "elastic_alpha": 0.0, "elastic_sigma": 4.0, "horizontal_flip": false}
+  },
+  "what_to_check": [
+    "The preflight output must initialize CEDiceLoss and execute one augmented batch on CUDA.",
+    "Compare all 3D metrics and per-patient Dice directly with E022: dataset, split, loss, augmentation, epoch budget, seed, and batch size are fixed.",
+    "Report model capacity and training time alongside accuracy: U-Net has 7,762,135 parameters versus E022 ENet's 284,003.",
+    "Inspect Patient_15 esophagus, the persistent thin-organ failure in E017 through E023."
+  ],
+  "results": {
+    "epochs_completed": 75,
+    "best_epoch_by_validation_dice": 50,
+    "training": {
+      "device": "NVIDIA H100",
+      "parameter_count": 7762135,
+      "total_minutes": 151.64,
+      "best_2d_validation_dice": 0.8705
+    },
+    "inference": {
+      "validation_patients": 5,
+      "seconds_per_patient_forward_and_stitch": 11.262
+    },
+    "metrics_3d": {
+      "dice_mean": {"esophagus": 0.561, "heart": 0.929, "trachea": 0.833, "aorta": 0.802, "foreground_mean": 0.781},
+      "iou_mean": {"esophagus": 0.432, "heart": 0.869, "trachea": 0.715, "aorta": 0.691, "foreground_mean": 0.677},
+      "hd95_mm_mean": {"esophagus": 50.944, "heart": 8.687, "trachea": 20.599, "aorta": 25.905, "foreground_mean": 26.534},
+      "assd_mm_mean": {"esophagus": 11.221, "heart": 2.480, "trachea": 2.392, "aorta": 3.141, "foreground_mean": 4.809},
+      "nsd_mean": {"esophagus": 0.567, "heart": 0.562, "trachea": 0.797, "aorta": 0.717, "foreground_mean": 0.661}
+    },
+    "comparison_to_E022": {
+      "protocol": "All data, split, loss, augmentation, epoch, batch-size, seed, and worker settings are identical; only the architecture differs.",
+      "dice_delta": {"esophagus": 0.070, "heart": 0.008, "trachea": 0.013, "aorta": 0.006, "foreground_mean": 0.024},
+      "interpretation": "U-Net improves the mean Dice of every organ over E022: foreground 0.781 versus 0.757, with the largest gain on esophagus (0.561 versus 0.491). NSD also improves for every organ. Boundary distance is mixed: esophagus and heart improve, while trachea and aorta HD95 are higher. Patient_15 esophagus remains the dominant failure (Dice 0.034, HD95 150.5 mm). This is a controlled single-seed comparison, but the E022 per-patient metrics CSV was not retained locally after artifact cleanup, so no paired significance statistic is claimed."
+    },
+    "artifacts": {
+      "metrics_3d": "results/E024_unet_aorta_ce_dice_augment_75ep/metrics3d/metrics.csv",
+      "prediction_volumes": "volumes/E024_unet_aorta_ce_dice_augment_75ep/nii/",
+      "training_log": "results/E024_unet_aorta_ce_dice_augment_75ep/slurm-26904253.out",
+      "inference_log": "volumes/E024_unet_aorta_ce_dice_augment_75ep/slurm-26927206.out"
+    }
+  }
+}

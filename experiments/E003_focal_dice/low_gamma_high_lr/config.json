@@ -1,10 +1,10 @@
 {
-  "exp_id": "E003_focalloss_low_gamma",
+  "exp_id": "E003_dice_focalloss_low_gamma_high_lr",
   "parent_id": "E001",
-  "status": "registered",
-  "runtime_config": "configs/losses/E003_focal_low_gamma.yaml",
-  "runtime_results": null,
-  "runtime_volumes": null,
+  "status": "complete",
+  "runtime_config": "configs/losses/E003_dice_focal_low_gamma_high_lr.yaml",
+  "runtime_results": "results/",
+  "runtime_volumes": "volumes/",
   "change": "",
   "hypothesis": "",
   "plan_reference": "",
@@ -38,9 +38,9 @@
   },
   "training": {
     "mode": "full",
-    "loss": "CrossEntropy",
+    "loss": "FocalDiceLoss",
     "optimizer": "Adam",
-    "learning_rate": 0.001,
+    "learning_rate": 0.002,
     "betas": [
       0.9,
       0.999
@@ -57,50 +57,50 @@
   "git_commit": "",
   "results": {
     "epochs_completed": 25,
-    "best_epoch_by_validation_dice": null,
+    "best_epoch_by_validation_dice": ,
     "training": {
-      "total_minutes": null,
-      "device": null,
-      "parameter_count": null
+      "total_minutes": ,
+      "device": ,
+      "parameter_count":
     },
     "inference": {
-      "seconds_per_patient": null,
-      "device": null,
-      "validation_patients": null
+      "seconds_per_patient": ,
+      "device": ,
+      "validation_patients":
     },
     "metrics_3d": {
       "dice_mean": {
-        "esophagus": null,
-        "heart": null,
-        "trachea": null,
-        "aorta": null,
-        "foreground_mean": null
+        "esophagus": ,
+        "heart": ,
+        "trachea": ,
+        "aorta": ,
+        "foreground_mean":
       },
       "hd95_mm_mean": {
-        "esophagus": null,
-        "heart": null,
-        "trachea": null,
-        "aorta": null
+        "esophagus": ,
+        "heart": ,
+        "trachea": ,
+        "aorta":
       },
       "assd_mm_mean": {
-        "esophagus": null,
-        "heart": null,
-        "trachea": null,
-        "aorta": null
+        "esophagus": ,
+        "heart": ,
+        "trachea": ,
+        "aorta":
       },
       "nsd_mean": {
-        "esophagus": null,
-        "heart": null,
-        "trachea": null,
-        "aorta": null
+        "esophagus": ,
+        "heart": ,
+        "trachea": ,
+        "aorta":
       }
     },
     "comparison_to_parent": {
-      "foreground_mean_dice_delta": null,
+      "foreground_mean_dice_delta": ,
       "dice_delta": {
-        "esophagus": null,
-        "heart": null,
-        "trachea": null
+        "esophagus": ,
+        "heart": ,
+        "trachea":
       },
       "interpretation": ""
     },
@@ -110,6 +110,5 @@
       "prediction_volumes": ""
     }
   },
-  "what_to_check": [],
-  "run_state": "template only - never executed; result fields are null"
+  "what_to_check": []
 }
