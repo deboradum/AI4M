@@ -1,7 +1,7 @@
 {
   "exp_id": "E014_hu_soft",
   "parent_id": "E001",
-  "status": "registered",
+  "status": "complete",
   "runtime_config": "configs/E014_hu_soft.yaml",
   "runtime_results": "results/E014_hu_soft",
   "runtime_volumes": "volumes/E014_hu_soft",
@@ -19,8 +19,17 @@
       "seed": 0,
       "fold": 0
     },
-    "resolution": [256, 256],
-    "classes": ["background", "esophagus", "heart", "trachea", "aorta"]
+    "resolution": [
+      256,
+      256
+    ],
+    "classes": [
+      "background",
+      "esophagus",
+      "heart",
+      "trachea",
+      "aorta"
+    ]
   },
   "model": {
     "name": "ENet",
@@ -33,7 +42,10 @@
     "loss": "CrossEntropy",
     "optimizer": "Adam",
     "learning_rate": 0.0005,
-    "betas": [0.9, 0.999],
+    "betas": [
+      0.9,
+      0.999
+    ],
     "batch_size": 8,
     "epochs": 25,
     "temperature": 1.0,
@@ -97,6 +109,8 @@
       "Aorta absent from segthor_part1, reported as n/a."
     ],
     "artifacts": {
+      "cleared": "2026-09-17",
+      "reason": "unsuccessful run, artifacts removed",
       "metrics_3d": "results/E014_hu_soft/metrics3d/metrics.csv",
       "prediction_volumes": "volumes/E014_hu_soft/nii/"
     }
@@ -105,5 +119,6 @@
     "Esophagus 3D Dice vs E001 (0.610) and vs E014_hu_wide.",
     "Heart/trachea trade-off: does saturation at -200/300 HU hurt them?",
     "HD95, not only Dice."
-  ]
+  ],
+  "artifact_retention": "Local artifacts (results/ + volumes/) cleared 2026-09-17 with the other unsuccessful runs; every metric above is preserved in this record."
 }

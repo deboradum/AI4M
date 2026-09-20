@@ -9,7 +9,8 @@ from ENet import ENet
 from UNet import UNet
 from configType import TrainConfig
 from infer import build_net
-from losses import CrossEntropy
+from losses import CEDiceLoss, CrossEntropy
+from main import build_loss, target_classes_for_config
 
 
 def config_for(net_name: str, *, in_slices: int = 1, kernels: int = 8, factor: int = 2) -> TrainConfig:
@@ -17,7 +18,7 @@ def config_for(net_name: str, *, in_slices: int = 1, kernels: int = 8, factor: i
                        B=8, kernels=kernels, factor=factor, lr=0.0005,
                        betas=(0.9, 0.999), epochs=25, num_workers=0,
                        temperature=1.0, optimizer="Adam", seed=123, patience=-1,
-                       in_slices=in_slices)
+                       in_slices=in_slices, loss_fn="ce")
 
 
 class TestModels(unittest.TestCase):
@@ -37,6 +38,12 @@ class TestModels(unittest.TestCase):
 
         self.assertGreater(sum(p.numel() for p in large.parameters()),
                            sum(p.numel() for p in baseline.parameters()))
+
+    def test_ce_dice_loss_factory_matches_training_path(self) -> None:
+        config = config_for("UNet", kernels=32, factor=4)
+        config.loss_fn = "ce_dice"
+        loss_fn = build_loss(config, target_classes_for_config(config, config.K))
+        self.assertIsInstance(loss_fn, CEDiceLoss)
 
     def test_unet_one_and_three_channel_forward_and_backward(self) -> None:
         loss_fn = CrossEntropy(idk=list(range(5)))
