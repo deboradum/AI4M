@@ -52,7 +52,7 @@
     "seed": 123,
     "scheduler": null,
     "augmentation": false,
-    "focal_gamma": 1.5,
+    "focal_gamma": 1.0,
     "class_weights": [
       0.2,
       1.2,

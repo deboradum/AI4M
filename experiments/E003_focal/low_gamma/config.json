@@ -40,7 +40,7 @@
     "mode": "full",
     "loss": "CrossEntropy",
     "optimizer": "Adam",
-    "learning_rate": 0.0005,
+    "learning_rate": 0.001,
     "betas": [
       0.9,
       0.999
@@ -52,7 +52,7 @@
     "seed": 123,
     "scheduler": null,
     "augmentation": false,
-    "focal_gamma": 1
+    "focal_gamma": 0.5
   },
   "git_commit": "",
   "results": {

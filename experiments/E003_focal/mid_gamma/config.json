@@ -1,8 +1,8 @@
 {
-  "exp_id": "E003_focalloss_base_lr",
+  "exp_id": "E003_focalloss_mid_gamma",
   "parent_id": "E001",
   "status": "complete",
-  "runtime_config": "configs/losses/E003_focal_base_lr.yaml",
+  "runtime_config": "configs/losses/E003_focal_mid_gamma.yaml",
   "runtime_results": "results/",
   "runtime_volumes": "volumes/",
   "change": "",
@@ -38,9 +38,9 @@
   },
   "training": {
     "mode": "full",
-    "loss": "CrossEntropy",
+    "loss": "FocalLoss",
     "optimizer": "Adam",
-    "learning_rate": 0.0005,
+    "learning_rate": 0.001,
     "betas": [
       0.9,
       0.999
@@ -52,7 +52,7 @@
     "seed": 123,
     "scheduler": null,
     "augmentation": false,
-    "focal_gamma": 2.0
+    "focal_gamma": 1.0
   },
   "git_commit": "",
   "results": {
