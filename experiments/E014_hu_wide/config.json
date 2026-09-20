@@ -1,7 +1,7 @@
 {
   "exp_id": "E014_hu_wide",
   "parent_id": "E001",
-  "status": "registered",
+  "status": "complete",
   "runtime_config": "configs/E014_hu_wide.yaml",
   "runtime_results": "results/E014_hu_wide",
   "runtime_volumes": "volumes/E014_hu_wide",
@@ -19,8 +19,17 @@
       "seed": 0,
       "fold": 0
     },
-    "resolution": [256, 256],
-    "classes": ["background", "esophagus", "heart", "trachea", "aorta"]
+    "resolution": [
+      256,
+      256
+    ],
+    "classes": [
+      "background",
+      "esophagus",
+      "heart",
+      "trachea",
+      "aorta"
+    ]
   },
   "model": {
     "name": "ENet",
@@ -33,7 +42,10 @@
     "loss": "CrossEntropy",
     "optimizer": "Adam",
     "learning_rate": 0.0005,
-    "betas": [0.9, 0.999],
+    "betas": [
+      0.9,
+      0.999
+    ],
     "batch_size": 8,
     "epochs": 25,
     "temperature": 1.0,
@@ -73,12 +85,12 @@
       "assd_mm_mean": {
         "esophagus": 4.07,
         "heart": 6.17,
-        "trachea": 4.50,
+        "trachea": 4.5,
         "aorta": null
       },
       "nsd_mean": {
         "esophagus": 0.433,
-        "heart": 0.400,
+        "heart": 0.4,
         "trachea": 0.528,
         "aorta": null
       }
