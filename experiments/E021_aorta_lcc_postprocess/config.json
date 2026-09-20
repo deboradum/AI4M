@@ -1,0 +1,65 @@
+{
+  "exp_id": "E021_aorta_lcc_postprocess",
+  "parent_id": null,
+  "status": "rejected",
+  "runtime_config": null,
+  "runtime_results": null,
+  "runtime_volumes": null,
+  "change": "Plan item 1.7: at inference, keep only the largest 3D connected component of each predicted class, dropping stray blobs. Inference-only, no retraining.",
+  "hypothesis": "Each organ is a single connected structure, so stray false-positive blobs cost Dice and wreck HD95. The plan predicted HD95 would drop sharply at zero training cost (it names Patient_19's trachea as the case to check).",
+  "method": "Applied post hoc to the stitched volumes of E017_aorta_huwide, E018_aorta_augment and E019_aorta_ce_dice, re-scored through metrics3d.class_metrics with the CT spacing, so the delta is attributable to the filter alone. Script kept at experiments/E021_aorta_lcc_postprocess/postprocess_eval.py; re-run with PYTHONPATH=. ./ai4mi/bin/python experiments/E021_aorta_lcc_postprocess/postprocess_eval.py <run>.",
+  "verdict": "rejected",
+  "results": {
+    "dice_delta": {
+      "E017_aorta_huwide": {
+        "esophagus": -0.065,
+        "heart": 0.005,
+        "trachea": -0.031,
+        "aorta": -0.046
+      },
+      "E018_aorta_augment": {
+        "esophagus": -0.051,
+        "heart": 0.001,
+        "trachea": -0.04,
+        "aorta": -0.001
+      },
+      "E019_aorta_ce_dice": {
+        "esophagus": -0.016,
+        "heart": 0.001,
+        "trachea": 0.003,
+        "aorta": -0.077
+      }
+    },
+    "hd95_delta_mm": {
+      "E017_aorta_huwide": {
+        "esophagus": 77.9,
+        "heart": -26.8,
+        "trachea": -32.9,
+        "aorta": 35.2
+      },
+      "E018_aorta_augment": {
+        "esophagus": 86.2,
+        "heart": -8.2,
+        "trachea": 20.8,
+        "aorta": 3.3
+      },
+      "E019_aorta_ce_dice": {
+        "esophagus": 10.7,
+        "heart": -7.6,
+        "trachea": -17.0,
+        "aorta": 52.7
+      }
+    },
+    "mechanism": "The premise only half holds and the failure direction was wrong. GT connectivity: esophagus, heart and trachea are single-component in all 5 validation patients, but the recovered aorta has a second component on Patients 01 and 11 (1 and 1813 voxels). More importantly the predictions fail by leaving GAPS, which fragment the blob into pieces; keeping the largest piece then deletes correctly-segmented parts beyond the gap. On E019 the aorta prediction is 6-19 pieces with the largest holding 49 % (Patient_15), 64 % (Patient_11) and 96-100 % on the easy patients; the esophagus is 3-11 pieces with 59 % on Patient_15. Filtering therefore helps exactly where the prediction is already one blob (harmless but pointless) and hurts most on the patients we need to fix."
+  },
+  "what_was_learned": [
+    "HD95 does improve for the well-segmented classes (heart 36.8 -> 10.0 mm on E017, trachea 57.8 -> 24.9 mm), so the plan's expectation was half right - it just targets the classes that are not the problem.",
+    "The remaining error is discontinuity along z, not stray blobs, which points at 2.5D input (plan 1.8) or a 3D model (plan 2.1) rather than at post-processing.",
+    "A targeted variant is untested and worth one cheap check later: largest component PER SLICE for the thin classes cannot cut across a z-gap, so it removes in-plane specks without deleting remote slices."
+  ],
+  "cost": {
+    "training": 0,
+    "gpu_minutes": 0,
+    "local_minutes": 45
+  }
+}

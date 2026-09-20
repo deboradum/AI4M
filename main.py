@@ -152,35 +152,40 @@ def setup(args, config: TrainConfig) -> tuple[nn.Module, Any, Any, DataLoader, D
     return (net, optimizer, device, train_loader, val_loader, K)
 
 
+def target_classes_for_config(config: TrainConfig, K: int) -> list[int]:
+    if config.mode == "full":
+        return list(range(K))
+    if config.mode == "partial" and config.dataset in {"SEGTHOR", "SEGTHOR_RESAMPLED"}:
+        return [0, 1, 3, 4]
+    raise ValueError(f"Unsupported mode '{config.mode}' for dataset '{config.dataset}'")
+
+
+def build_loss(config: TrainConfig, target_classes: list[int]):
+    """Build the configured training loss for both training and GPU preflight."""
+    if config.loss_fn == "ce":
+        return CrossEntropy(idk=target_classes)
+    if config.loss_fn == "weighted_ce":
+        return WeightedCrossEntropy(idk=target_classes, class_weights=config.class_weights)
+    if config.loss_fn == "ce_dice":
+        return CEDiceLoss(idk=target_classes)
+    if config.loss_fn == "weighted_ce_dice":
+        return WeightedCEDiceLoss(idk=target_classes, class_weights=config.class_weights)
+    if config.loss_fn == "focal":
+        return FocalLoss(idk=target_classes, focal_gamma=config.focal_gamma)
+    if config.loss_fn == "weighted_focal":
+        return WeightedFocalLoss(idk=target_classes, focal_gamma=config.focal_gamma,
+                                 class_weights=config.class_weights)
+    if config.loss_fn == "focal_dice":
+        return FocalDiceLoss(idk=target_classes, focal_gamma=config.focal_gamma)
+    raise ValueError(f"Unsupported loss_fn '{config.loss_fn}'")
+
+
 def runTraining(args, config: TrainConfig):
     print(f">>> Setting up to train on {config.dataset} with {config.mode}")
     net, optimizer, device, train_loader, val_loader, K = setup(args, config)
 
-    if config.mode == "full":
-        target_classes = list(range(K))
-    elif config.mode == "partial" and config.dataset == 'SEGTHOR':
-        target_classes = [0, 1, 3, 4]
-    elif config.mode == "partial" and config.dataset == 'SEGTHOR_RESAMPLED':
-        target_classes = [0, 1, 3, 4]
-    else:
-        raise ValueError(f"Unsupported mode '{config.mode}' for dataset '{config.dataset}'")
-
-    if config.loss_fn == "ce":
-        loss_fn = CrossEntropy(idk=target_classes)
-    elif config.loss_fn == "weighted_ce":
-        loss_fn = WeightedCrossEntropy(idk=target_classes, class_weights=config.class_weights)
-    elif config.loss_fn == "ce_dice":
-        loss_fn = CEDiceLoss(idk=target_classes)
-    elif config.loss_fn == "weighted_ce_dice":
-        loss_fn = WeightedCEDiceLoss(idk=target_classes, class_weights=config.class_weights)
-    elif config.loss_fn == "focal":
-        loss_fn = FocalLoss(idk=target_classes, focal_gamma=config.focal_gamma)
-    elif config.loss_fn == "weighted_focal":
-        loss_fn = WeightedFocalLoss(idk=target_classes, focal_gamma=config.focal_gamma, class_weights=config.class_weights)
-    elif config.loss_fn == "focal_dice":
-        loss_fn = FocalDiceLoss(idk=target_classes, focal_gamma=config.focal_gamma)
-    else:
-        raise Exception(f"'config.loss_fn' must be 'ce', 'focal', 'weighted_ce', or 'ce_dice'. Got '{config.loss_fn}'")
+    target_classes = target_classes_for_config(config, K)
+    loss_fn = build_loss(config, target_classes)
 
     # Notice one has the length of the _loader_, and the other one of the _dataset_
     log_loss_tra: Tensor = torch.zeros((config.epochs, len(train_loader)))
