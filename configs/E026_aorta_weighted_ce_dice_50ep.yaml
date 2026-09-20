@@ -1,0 +1,55 @@
+# E026_aorta_weighted_ce_dice_50ep: E024 + weighted CE+Dice, weights from the
+# measured training-fold class imbalance.
+#
+# The aorta line of the project has only ever tested region-overlap loss
+# (E019/E022, plain ce_dice) as the answer to class imbalance. Class weighting is
+# implemented (losses.py WeightedCrossEntropy / WeightedCEDiceLoss,
+# configType.loss_fn options) and six configs were written for it under
+# configs/losses/, but no weighted run was ever registered - so it is untested,
+# not refuted. This run tests it on the four-organ target.
+#
+# The weights are the square root of the inverse class frequency, measured over
+# the TRAIN fold of this dataset (2817 slices, 256x256, K=5):
+#
+#   class      voxels         share      raw inv-freq   sqrt   (bg = 1)
+#   0 background 182671086   98.9471%       0.202      0.450      1.00
+#   1 esophagus      68713    0.0372%     537.351     23.181     51.56
+#   2 heart        1447431    0.7840%      25.509      5.051     11.23
+#   3 trachea        63245    0.0343%     583.809     24.162     53.74
+#   4 aorta         364437    0.1974%     101.315     10.066     22.39
+#
+# Square root, not raw inverse frequency: the raw vector would give the trachea
+# 2888x the background weight and 11x the aorta's, and the loss is
+# weighted_ce + dice_loss, so a spiky weight vector dominates the objective and
+# the run collapses onto the smallest class. The square root compresses the
+# spikiest ratio while keeping the ordering the imbalance study produced
+# (trachea > esophagus > aorta > heart > background).
+#
+# The group's earlier weighting configs (configs/losses/E001_weighted_ce_*.yaml)
+# used a flat [0.2, 5, 5, 5, 5] for the same reason - flattening to avoid
+# collapse - but they predate the aorta and were never registered. Deriving the
+# vector from the target's own frequencies is the more defensible version and is
+# what this run measures.
+#
+# Everything else is E024, so this is a single-variable pair against it:
+# same dataset, split, seed, epochs, cross-entropy-based objective, no
+# augmentation of any kind (augment is false and aug_* are left at their
+# defaults, exactly as in E024).
+dataset: "SEGTHOR_aorta_norm"
+mode: "full"
+loss_fn: "weighted_ce_dice"
+class_weights: [0.450, 23.181, 5.051, 24.162, 10.066]
+K: 5
+net_name: "ENet"
+B: 8
+kernels: 8
+factor: 2
+lr: 0.0005
+betas: [0.9, 0.999]
+epochs: 50
+num_workers: 5
+temperature: 1.0
+optimizer: "Adam"
+seed: 123
+patience: -1
+in_slices: 1
