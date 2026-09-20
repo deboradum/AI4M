@@ -43,7 +43,6 @@ def generate_eda_plots(df_geometry, class_volumes, hu_samples, global_hu_samples
         ax=ax
     )
 
-    # X-axis is now linear by default (log scale removed)
     ax.set_xlabel("Voxel Count per Scan")
     ax.set_ylabel("")
 
@@ -58,8 +57,6 @@ def generate_eda_plots(df_geometry, class_volumes, hu_samples, global_hu_samples
 
     secax = ax.secondary_xaxis('top', functions=(voxels_to_pct, pct_to_voxels))
     secax.set_xlabel("Percentage of Average Total Scan Volume (%)")
-
-    # Force the secondary axis to use plain decimal notation instead of scientific (10^-1)
     secax.ticklabel_format(style='plain')
 
     plt.title("Voxel Volume Distribution Across Patients", y=1.2)
@@ -67,7 +64,7 @@ def generate_eda_plots(df_geometry, class_volumes, hu_samples, global_hu_samples
     plt.savefig("segthor_eda_volume.png", dpi=300)
     plt.close()
 
-    # --- HU Intensity Distribution (Organ Specific) ---
+    # --- HU Intensity Distribution (All Organs) ---
     plt.figure(figsize=(9, 6))
     for org in active_organs:
         sns.kdeplot(hu_samples[org], label=org, fill=True, alpha=0.4, linewidth=2)
@@ -78,6 +75,22 @@ def generate_eda_plots(df_geometry, class_volumes, hu_samples, global_hu_samples
     plt.legend()
     plt.tight_layout()
     plt.savefig("segthor_eda_hu_distributions.png", dpi=300)
+    plt.close()
+
+    # --- HU Intensity Distribution (Zoomed: Heart, Esophagus, Aorta) ---
+    plt.figure(figsize=(9, 6))
+    soft_tissue_organs = ["Esophagus", "Heart", "Aorta"]
+    for org in soft_tissue_organs:
+        if org in active_organs:
+            sns.kdeplot(hu_samples[org], label=org, fill=True, alpha=0.4, linewidth=2)
+    plt.title("HU Distributions (Zoomed: Soft Tissues Only)")
+    plt.xlabel("Hounsfield Units (HU)")
+    plt.ylabel("Density")
+    # Soft tissues usually reside between -100 and +300 HU (accounting for contrast agents)
+    plt.xlim(-100, 300)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("segthor_eda_hu_distributions_zoomed.png", dpi=300)
     plt.close()
 
     # --- The Normalization Problem ---
@@ -124,6 +137,7 @@ def generate_eda_plots(df_geometry, class_volumes, hu_samples, global_hu_samples
     print("- segthor_eda_spacing.png")
     print("- segthor_eda_volume.png")
     print("- segthor_eda_hu_distributions.png")
+    print("- segthor_eda_hu_distributions_zoomed.png")
     print("- segthor_eda_normalization_issue.png")
 
 
@@ -142,9 +156,8 @@ def analyze_segthor_dataset(data_path):
         "Spacing X (mm)": [], "Spacing Y (mm)": [], "Spacing Z (mm)": []
     }
 
-    # Reservoir for raw HU samples to build distribution plots (max 10k pixels per patient per organ)
     hu_samples = {org: [] for org in organs.values()}
-    global_hu_samples = [] # To show the normalization problem
+    global_hu_samples = []
     class_volumes = {org: [] for org in organs.values()}
 
     print(f"Starting analysis on {len(patient_dirs)} patients. Sampling voxels for KDE plots...")
@@ -161,7 +174,6 @@ def analyze_segthor_dataset(data_path):
         ct_data = ct_img.get_fdata()
         gt_data = gt_img.get_fdata()
 
-        # Geometry & Spacing
         spacing = ct_img.header.get_zooms()
         dims = ct_data.shape
         stats["Patient"].append(p_dir.name)
@@ -172,13 +184,10 @@ def analyze_segthor_dataset(data_path):
         stats["Spacing Y (mm)"].append(spacing[1])
         stats["Spacing Z (mm)"].append(spacing[2] if len(spacing) >= 3 else 0.0)
 
-        # Global CT sample (Air to Bone) for the normalization plot
-        # Clip absurd scanner artifacts above 3000 to keep the plot readable
         valid_bg = ct_data[(ct_data > -1050) & (ct_data < 3000)]
         if len(valid_bg) > 0:
             global_hu_samples.extend(np.random.choice(valid_bg, min(5000, len(valid_bg)), replace=False))
 
-        # Organ specific sampling
         for class_idx, org_name in organs.items():
             mask = (gt_data == class_idx)
             voxels = np.sum(mask)
