@@ -91,7 +91,8 @@ def main(args: argparse.Namespace) -> None:
     K: int = config.K
 
     gpu: bool = args.gpu and torch.cuda.is_available()
-    device = torch.device("cuda") if gpu else torch.device("cpu")
+    mps: bool = args.mps and torch.mps.is_available()
+    device = torch.device("cuda") if gpu else torch.device("mps") if mps else torch.device("cpu")
     print(f">> Picked {device} to run inference")
 
     net = build_net(config, args.weights, device)
@@ -124,7 +125,7 @@ def main(args: argparse.Namespace) -> None:
 
     t0 = time.perf_counter()
     for id_ in tqdm_(sorted(groups), desc=">> Stitching"):
-        stitch_patient(id_, groups[id_], nii_dest, K, args.scan_pattern)
+        stitch_patient(id_, groups[id_], nii_dest, K, args.scan_pattern, resample=args.resample)
     t_stitch = time.perf_counter() - t0
 
     n_patients: int = len(groups)
@@ -156,6 +157,9 @@ def get_args() -> argparse.Namespace:
     parser.add_argument('--grp_regex', type=str, default=r"(Patient_\d+)_\d+")
     parser.add_argument('--batch_size', type=int, default=None, help="Defaults to the config's B")
     parser.add_argument('--gpu', action='store_true')
+    parser.add_argument('--mps', action='store_true', help="Use Apple Silicon GPU")
+    parser.add_argument('--resample', action='store_true',
+                        help="Enable inverse physical resampling for stitched volumes")
 
     args = parser.parse_args()
     pprint(vars(args))
