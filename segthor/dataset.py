@@ -36,7 +36,7 @@ from torch.utils.data import Dataset
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms.v2 import functional as TF
 
-from utils import class2one_hot
+from segthor.utils import class2one_hot
 
 
 @dataclass

@@ -41,10 +41,10 @@ from torch.utils.data import DataLoader
 
 from functools import partial
 
-from dataset import SliceDataset, AugParams
-from ShallowNet import shallowCNN
-from ENet import ENet
-from utils import (Dcm,
+from segthor.dataset import SliceDataset, AugParams
+from segthor.models.ShallowNet import shallowCNN
+from segthor.models.ENet import ENet
+from segthor.utils import (Dcm,
                    class2one_hot,
                    probs2one_hot,
                    probs2class,
@@ -52,12 +52,12 @@ from utils import (Dcm,
                    dice_coef,
                    save_images)
 
-from losses import FocalLoss, WeightedCrossEntropy, CEDiceLoss, WeightedFocalLoss, FocalDiceLoss, WeightedCEDiceLoss
-from losses import (CrossEntropy)
+from segthor.losses import FocalLoss, WeightedCrossEntropy, CEDiceLoss, WeightedFocalLoss, FocalDiceLoss, WeightedCEDiceLoss
+from segthor.losses import (CrossEntropy)
 
-from configType import TrainConfig, NETWORKS
-from runstats import RunStats
-from metrics import iou_coef, precision_coef, recall_coef
+from segthor.config import TrainConfig, NETWORKS
+from segthor.runstats import RunStats
+from segthor.metrics import iou_coef, precision_coef, recall_coef
 
 def set_seed(seed: int | None):
     if seed is None:

@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import torch
 
-from dataset import AugParams, augment_sample
+from segthor.dataset import AugParams, augment_sample
 from slice_segthor import norm_arr, norm_window
 
 

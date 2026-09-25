@@ -1,6 +1,6 @@
-from ShallowNet import shallowCNN
-from ENet import ENet
-from UNet import UNet
+from segthor.models.ShallowNet import shallowCNN
+from segthor.models.ENet import ENet
+from segthor.models.UNet import UNet
 
 from dataclasses import dataclass
 from typing import Tuple, Optional, List

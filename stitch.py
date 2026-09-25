@@ -28,7 +28,7 @@ import scipy.ndimage
 from skimage.io import imread
 from skimage.transform import resize
 
-from utils import map_, tqdm_
+from segthor.utils import map_, tqdm_
 
 
 def label_scale(K: int) -> float:

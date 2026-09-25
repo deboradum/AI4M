@@ -20,11 +20,11 @@ from PIL import Image
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 
-from dataset import make_slice_windows
+from segthor.dataset import make_slice_windows
 from main import img_transform
-from configType import TrainConfig, NETWORKS
+from segthor.config import TrainConfig, NETWORKS
 from stitch import group_by_patient, stitch_patient
-from utils import probs2class, save_images, tqdm_
+from segthor.utils import probs2class, save_images, tqdm_
 
 
 class ImageFolder(Dataset):
