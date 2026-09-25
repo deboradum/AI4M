@@ -13,10 +13,10 @@ import torch
 from torch.utils.data import DataLoader
 
 from main import img_transform, gt_transform
-from dataset import SliceDataset
-from ENet import ENet
-from losses import CrossEntropy
-from utils import probs2one_hot, probs2class, dice_coef, save_images
+from segthor.dataset import SliceDataset
+from segthor.models.ENet import ENet
+from segthor.losses import CrossEntropy
+from segthor.utils import probs2one_hot, probs2class, dice_coef, save_images
 
 
 def write_json(path, data):

@@ -35,6 +35,10 @@ import nibabel as nib
 from scipy.ndimage import label as nd_label
 from skimage.io import imread
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # repo root: pipeline modules live there
+
 from stitch import label_scale
 
 CLASS_NAMES: list[str] = ["background", "esophagus", "heart", "trachea", "aorta"]
