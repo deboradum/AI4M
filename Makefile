@@ -81,7 +81,7 @@ data/SEGTHOR_aorta_resampled: data/SEGTHOR_aorta
 
 # Full SegTHOR training set: 40 patients, all four organs labelled by the course
 # (released 2026-09-24, readme link). Supersedes segthor_part1 and the aorta recovery.
-# Split: 32 train / 8 validation, seed 0, fold 0. Window -1000..1000 HU (E014 result).
+# Split: the stratified 32/8 split in configs/splits/ (scripts/make_split.py). Window -1000..1000 HU (E014 result).
 data/segthor_train_full: data/segthor_train_full.zip
 	$(info $(yellow)unzip $<$(reset))
 	rm -rf $@_tmp $@ && mkdir -p $@_tmp
@@ -92,5 +92,5 @@ data/SEGTHOR_FULL_huwide: data/segthor_train_full
 	$(info $(green)python slice_segthor.py (full set, window -1000 1000)$(reset))
 	rm -rf $@_tmp $@
 	python $(CFLAGS) slice_segthor.py --source_dir data/segthor_train_full --dest_dir $@_tmp \
-		--shape 256 256 --retains 8 --seed 0 --fold 0 -p -1 --window -1000 1000
+		--shape 256 256 --split_file configs/splits/segthor_full_32_8.json -p -1 --window -1000 1000
 	mv $@_tmp $@
