@@ -18,8 +18,8 @@
 # Its camera elevation follows the stage; the left panel never changes content.
 #
 # Run from the repo root with the repo venv:
-#   ./ai4mi/bin/python make_presentation_figures.py [--skip-spin]
-#   ./ai4mi/bin/python make_presentation_figures.py --frames 168 --step-frames 0 30 60 100
+#   ./ai4mi/bin/python analysis/make_presentation_figures.py [--skip-spin]
+#   ./ai4mi/bin/python analysis/make_presentation_figures.py --frames 168 --step-frames 0 30 60 100
 # The assets are regenerable and live in PRESENTATION/, which .gitignore excludes.
 
 import time
@@ -38,6 +38,11 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.animation import FFMpegWriter
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # repo root: pipeline modules live there
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "legacy" / "aorta_recovery"))  # retrieve_aorta
 
 import retrieve_aorta as ra
 from retrieve_aorta import load_labels, split_patient, shared_slices, dice, N_MONTAGE_SLICES

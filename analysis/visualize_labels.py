@@ -7,7 +7,7 @@
 # segthor_part1 label, class 1 = esophagus UNION aorta, and only a picture shows
 # that the folded blob is two organs.
 #
-#   ./ai4mi/bin/python visualize_labels.py \
+#   ./ai4mi/bin/python analysis/visualize_labels.py \
 #       --ct data/segthor_part1/train/Patient_07/Patient_07.nii.gz \
 #       --gt data/SEGTHOR_aorta/train/Patient_07/GT.nii.gz --out /tmp/gt.png
 #

@@ -24,7 +24,7 @@
 # straight from disk, no transpose), so the strip can be checked against the tensor.
 #
 # Run from the repo root with the repo venv:
-#   ./ai4mi/bin/python make_augmentation_slide_figure.py [--out PRESENTATION]
+#   ./ai4mi/bin/python analysis/make_augmentation_slide_figure.py [--out PRESENTATION]
 # The output lives in PRESENTATION/, which .gitignore excludes.
 
 import argparse
@@ -38,8 +38,12 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # repo root: pipeline modules live there
+
 from main import img_transform, gt_transform
-from dataset import AugParams, augment_sample
+from segthor.dataset import AugParams, augment_sample
 from visualize_labels import class_colour, CLASS_NAMES
 
 DATASET = Path("data/SEGTHOR_aorta_huwide/train")
