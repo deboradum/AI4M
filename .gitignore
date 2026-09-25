@@ -11,5 +11,5 @@ projects
 .DS_Store
 
 configs/loss_tests
-AORTA_INSPECTION/*.png
+analysis/figures/
 PRESENTATION/
