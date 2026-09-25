@@ -14,7 +14,7 @@
 # script is deterministic (no randomness, no timestamps in the image).
 #
 # Run from the repo root with the repo venv:
-#   ./ai4mi/bin/python make_hu_slide_figure.py [--out PRESENTATION]
+#   ./ai4mi/bin/python analysis/make_hu_slide_figure.py [--out PRESENTATION]
 # The output lives in PRESENTATION/, which .gitignore excludes.
 
 import argparse
@@ -26,6 +26,10 @@ import nibabel as nib
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # repo root: pipeline modules live there
 
 from slice_segthor import norm_arr, norm_window
 

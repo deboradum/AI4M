@@ -36,7 +36,7 @@ from torch.utils.data import Dataset
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms.v2 import functional as TF
 
-from utils import class2one_hot
+from segthor.utils import class2one_hot
 
 
 @dataclass
@@ -111,6 +111,11 @@ def make_slice_windows(images: list[Path], in_slices: int) -> dict[Path, tuple[P
     image list. At volume boundaries the centre slice is replicated.
     """
     assert in_slices in [1, 3], f"Only 1 and 3 input slices are supported, got {in_slices}"
+
+    if in_slices == 1:
+        # A single-slice window needs no neighbours, so no naming convention either:
+        # keeps the TOY2 data (00000.png) and any non-SegTHOR naming usable for 2D training.
+        return {image: (image,) for image in images}
 
     by_patient: dict[str, list[tuple[int, Path]]] = defaultdict(list)
     for image in images:

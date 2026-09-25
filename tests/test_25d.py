@@ -7,9 +7,9 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 
-from ENet import ENet
-from dataset import SliceDataset
-from losses import CrossEntropy
+from segthor.models.ENet import ENet
+from segthor.dataset import SliceDataset
+from segthor.losses import CrossEntropy
 
 
 def image_transform(image: Image.Image) -> torch.Tensor:

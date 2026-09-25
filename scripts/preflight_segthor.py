@@ -21,8 +21,8 @@ from torch.utils.data import DataLoader
 # searches scripts/ rather than the repository root containing these modules.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from configType import TrainConfig, NETWORKS
-from dataset import AugParams, SliceDataset
+from segthor.config import TrainConfig, NETWORKS
+from segthor.dataset import AugParams, SliceDataset
 from main import build_loss, img_transform, gt_transform, target_classes_for_config
 
 

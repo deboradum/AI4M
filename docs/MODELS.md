@@ -1,7 +1,7 @@
 # Model architectures
 
 What the networks in this repository actually are: the three definitions
-(`ENet.py`, `UNet.py`, `ShallowNet.py`), how the shared config keys select and
+(`segthor/models/ENet.py`, `segthor/models/UNet.py`, `segthor/models/ShallowNet.py`), how the shared config keys select and
 shape them, and how they are called from the train/infer path. Every number here
 is reproducible with the command in the last section.
 
@@ -36,7 +36,7 @@ come from instantiating the classes (last section).
 
 ## ENet
 
-`ENet.py`. An ERFNet-style encoder/decoder: residual, factorized convolutions,
+`segthor/models/ENet.py`. An ERFNet-style encoder/decoder: residual, factorized convolutions,
 no transposed convolutions — pooling is undone with the indices the
 downsampling stages saved.
 
@@ -77,7 +77,7 @@ graph TD
 
 ### Blocks
 
-All line references are `ENet.py`.
+All line references are `segthor/models/ENet.py`.
 
 - `conv_block` (`:39`) = `Conv2d` → `BatchNorm2d` → `PReLU`; the atom used
   everywhere. `conv_block_asym` (`:45`) = a 5×1 conv followed by a 1×5 conv
@@ -167,7 +167,7 @@ the dataset, not by the network.
 
 ## UNet
 
-`UNet.py`. The second trained architecture, `E010_unet2d`, 7,762,135 params.
+`segthor/models/UNet.py`. The second trained architecture, `E010_unet2d`, 7,762,135 params.
 
 - `ConvBlock` (`:26`) = two (Conv 3×3-BN-PReLU) stacks (`:29-37`), the encoder
   and decoder atom.
@@ -188,7 +188,7 @@ the dataset, not by the network.
 
 ## shallowCNN
 
-`ShallowNet.py`. The toy/debug network, 3,245 params. `shallowCNN` (`:36`) =
+`segthor/models/ShallowNet.py`. The toy/debug network, 3,245 params. `shallowCNN` (`:36`) =
 three `convBatch` layers (`:28`: Conv 3×3-BN-PReLU, `bias=False`) at width
 `nG * 4 = 16` (`:39-41`), no downsampling and no skip connections
 (`forward`, `:43`). It takes `nG=4` by default and swallows `**kwargs`
@@ -248,7 +248,7 @@ Four facts with consequences, no proposals:
 3. **No post-processing inside the model.** No softmax, no CRF, no
    connected-component filter; all z-continuity and stray-component handling is
    expected downstream (`stitch.py`; largest connected component per class is
-   still a plan item in `full_plan.md` §1.7).
+   still a plan item in `docs/PLAN.md` §1.7).
 4. **The default `in_slices=1` means the forward pass has no z-context.** The
    only 2.5D run (E008) scored *below* E001 (foreground mean 3D Dice 0.486 vs
    0.598, `EXPERIMENTS.md`), at the cost of the +70 `conv0` parameters above.

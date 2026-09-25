@@ -11,3 +11,5 @@ imageio-ffmpeg
 pyyaml
 ipykernel
 pandas
+seaborn
+scipy

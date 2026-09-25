@@ -8,6 +8,35 @@ choose a parent → create a config → test → GPU preflight → train
 → infer and stitch → compute 3D metrics → record the result
 ```
 
+## 0. Repository layout
+
+The root holds the commands and the project files. Everything else is in a folder.
+
+```
+main.py · infer.py · stitch.py · slice_segthor.py     train, predict, rebuild volumes, slice the data
+metrics3d.py · summarize.py · plot.py                 evaluate in 3D, tabulate runs, plot curves
+Makefile · requirements.txt · readme.md · EXPERIMENTS.md · git.md · LICENSE
+
+segthor/        the package the commands import
+  config.py       TrainConfig and the NETWORKS registry
+  dataset.py · losses.py · utils.py · runstats.py · metrics.py
+  models/         ENet.py · UNet.py · ShallowNet.py
+configs/        one E0xx_name.yaml per experiment; defaults/ per dataset
+experiments/    one folder per registered run: config.json (+ per-patient csv)
+scripts/        launchers (*.sbatch), preflight, check_labels, gen_two_circles
+analysis/       data exploration and figure scripts; analysis/figures/ is generated and gitignored
+docs/           this guide, MODELS.md, PLAN.md, figures/ (course readme images)
+archive/        everything historical, nothing the pipeline uses: aorta_recovery/ (the class-1 split,
+                obsolete since the full labels), loss_sweep/ (unrecorded configs and records), docs/
+examples/       lecture example scripts from the course repository
+tests/          python -m unittest discover -s tests
+viewer/         course submodule
+data/ · results/ · volumes/   gitignored
+```
+
+Run every command from the repository root, e.g. `python main.py --config configs/E001_baseline.yaml --dest results/E001_baseline --gpu`
+or `python analysis/inspectDataset.py`. Scripts in `scripts/`, `analysis/` and `archive/` add the root to `sys.path` themselves.
+
 ## 1. Work on a branch
 
 Do not develop directly on `main`.
@@ -71,7 +100,7 @@ make data/SEGTHOR_aorta_huwide   # slice it, window [-1000, 1000], E001-E016 spl
 ```
 
 `data/SEGTHOR_aorta/` is the unsliced source (4-organ GT, `split_report.csv`,
-CTs symlinked, see `AORTA_INSPECTION/aorta-findings.md`); `_norm`, `_husoft`
+CTs symlinked, see `archive/docs/aorta-findings.md`); `_norm`, `_husoft`
 and `_resampled` are the same slicing with the other preprocessing, and a run
 on them sets `dataset: "SEGTHOR_aorta_huwide"`. Heart and trachea stay
 comparable with E001-E016; the esophagus target does not (it is the thin organ
@@ -104,7 +133,7 @@ experiments; E008 is the explicit 2.5D experiment.
 
 ## 5. Shared code versus ablation files
 
-`main.py`, `dataset.py`, `infer.py`, and `configType.py` are shared
+`main.py`, `segthor/dataset.py`, `infer.py`, and `segthor/config.py` are shared
 infrastructure. Do not create copies such as `main_E010.py`.
 
 Most ablations need only a config and experiment record. If a new reusable
@@ -112,7 +141,7 @@ capability is genuinely needed, make the smallest backward-compatible change,
 add a focused test, and ensure inference supports it too. Defaults must keep
 the original one-slice behavior.
 
-The network definitions themselves (`ENet.py`, `UNet.py`, `ShallowNet.py`) and
+The network definitions themselves (`segthor/models/ENet.py`, `segthor/models/UNet.py`, `segthor/models/ShallowNet.py`) and
 what `kernels`, `factor` and `in_slices` mean for each are in [MODELS.md](MODELS.md).
 
 ## 6. Test and preflight
@@ -198,9 +227,9 @@ python metrics3d.py \
 Use the same command pattern for every run. In the archive the E001–E016 runs used
 (`segthor_part1.zip` sha256 `6c203831…`), the aorta has no class of its own:
 `GT.nii.gz` class 1 is esophagus ∪ aorta (`Patient_07/GT2.nii.gz` separates them:
-25373 + 89856 = 115229 = class-1 voxels). `retrieve_aorta.py` writes a 4-organ GT
-to `data/SEGTHOR_aorta/`; run `check_labels.py` before any new run. See
-`AORTA_INSPECTION/aorta-findings.md`. Summarize completed runs with:
+25373 + 89856 = 115229 = class-1 voxels). `archive/aorta_recovery/retrieve_aorta.py` writes a 4-organ GT
+to `data/SEGTHOR_aorta/`; run `scripts/check_labels.py` before any new run. See
+`archive/docs/aorta-findings.md`. Summarize completed runs with:
 
 ```bash
 python summarize.py results/E001_baseline results/E010_large_enet \
