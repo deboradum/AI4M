@@ -5,11 +5,11 @@ from pathlib import Path
 import torch
 import torch.nn.functional as F
 
-from ENet import ENet
-from UNet import UNet
-from configType import TrainConfig
+from segthor.models.ENet import ENet
+from segthor.models.UNet import UNet
+from segthor.config import TrainConfig
 from infer import build_net
-from losses import CEDiceLoss, CrossEntropy
+from segthor.losses import CEDiceLoss, CrossEntropy
 from main import build_loss, target_classes_for_config
 
 
