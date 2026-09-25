@@ -5,7 +5,7 @@
 # (E019/E022, plain ce_dice) as the answer to class imbalance. Class weighting is
 # implemented (losses.py WeightedCrossEntropy / WeightedCEDiceLoss,
 # configType.loss_fn options) and six configs were written for it under
-# configs/losses/, but no weighted run was ever registered - so it is untested,
+# configs/archive/losses/, but no weighted run was ever registered - so it is untested,
 # not refuted. This run tests it on the four-organ target.
 #
 # The weights are the square root of the inverse class frequency, measured over
@@ -25,7 +25,7 @@
 # spikiest ratio while keeping the ordering the imbalance study produced
 # (trachea > esophagus > aorta > heart > background).
 #
-# The group's earlier weighting configs (configs/losses/E001_weighted_ce_*.yaml)
+# The group's earlier weighting configs (configs/archive/losses/E001_weighted_ce_*.yaml)
 # used a flat [0.2, 5, 5, 5, 5] for the same reason - flattening to avoid
 # collapse - but they predate the aorta and were never registered. Deriving the
 # vector from the target's own frequencies is the more defensible version and is
