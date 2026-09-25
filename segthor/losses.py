@@ -25,7 +25,7 @@
 import torch
 from torch import einsum
 
-from utils import simplex, sset
+from segthor.utils import simplex, sset
 
 
 class CrossEntropy():

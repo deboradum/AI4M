@@ -28,7 +28,7 @@ import numpy as np
 import nibabel as nib
 from scipy.ndimage import binary_erosion, distance_transform_edt
 
-from utils import tqdm_
+from segthor.utils import tqdm_
 
 METRICS: list[str] = ["dice", "iou", "hd95", "assd", "nsd"]
 
