@@ -43,7 +43,7 @@ data/SEGTHOR_RESAMPLED:
 ## data/SEGTHOR_aorta holds the challenge's four organs: class 1 of the archive's
 ## GT is esophagus UNION aorta (folded together), so retrieve_aorta.py splits it
 ## back with a distance-transform watershed and gates. See
-## docs/archive/aorta-findings.md. The slicing uses the E001-E016 split
+## archive/docs/aorta-findings.md. The slicing uses the E001-E016 split
 ## (retains 5, seed 0, fold 0) so new runs stay comparable with the old ones.
 ## Note the esophagus target changes: it is the thin organ alone now, not the fold.
 AORTA_PY ?= ./ai4mi/bin/python
@@ -51,8 +51,8 @@ AORTA_SLICE = $(AORTA_PY) slice_segthor.py --source_dir data/SEGTHOR_aorta --des
 	--shape 256 256 --retains 5 --seed 0 --fold 0 -p -1
 
 data/SEGTHOR_aorta: data/segthor_part1
-	$(info $(green)python legacy/aorta_recovery/retrieve_aorta.py$(reset))
-	$(AORTA_PY) legacy/aorta_recovery/retrieve_aorta.py --src data/segthor_part1/train --dest $@ \
+	$(info $(green)python archive/aorta_recovery/retrieve_aorta.py$(reset))
+	$(AORTA_PY) archive/aorta_recovery/retrieve_aorta.py --src data/segthor_part1/train --dest $@ \
 		--gt2 data/segthor_part1/train/Patient_07/GT2.nii.gz --figures analysis/figures/aorta_inspection
 
 data/SEGTHOR_aorta_norm: data/SEGTHOR_aorta
