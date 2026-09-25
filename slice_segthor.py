@@ -22,6 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import json
 import pickle
 import random
 import argparse
@@ -190,17 +191,27 @@ def slice_patient(id_: str, dest_path: Path, source_path: Path, shape: tuple[int
     return out_dx, out_dy, out_dz
 
 
-def get_splits(src_path: Path, retains: int, fold: int) -> tuple[list[str], list[str], list[str]]:
+def get_splits(src_path: Path, retains: int, fold: int,
+               split_file: Path | None = None) -> tuple[list[str], list[str], list[str]]:
     ids: list[str] = sorted(map_(lambda p: p.name, (src_path / 'train').glob('*')))
     ids = [i for i in ids if (src_path / 'train' / i).is_dir() and not i.startswith('.')]
     print(f"Founds {len(ids)} in the id list")
     print(ids[:10])
     assert len(ids) > retains
 
-    random.shuffle(ids)  # Shuffle before to avoid any problem if the patients are sorted in any way
-    validation_slice = slice(fold * retains, (fold + 1) * retains)
-    validation_ids: list[str] = ids[validation_slice]
-    assert len(validation_ids) == retains
+    validation_ids: list[str]
+    if split_file is not None:
+        # Fixed, stratified split written by scripts/make_split.py: the same validation
+        # patients for every run and every teammate. --retains/--fold are ignored.
+        validation_ids = json.loads(split_file.read_text())["validation"]
+        missing = sorted(set(validation_ids) - set(ids))
+        assert not missing, f"{split_file} lists patients not in {src_path}: {missing}"
+        print(f"Using the {len(validation_ids)} validation patients of {split_file}")
+    else:
+        random.shuffle(ids)  # Shuffle before to avoid any problem if the patients are sorted in any way
+        validation_slice = slice(fold * retains, (fold + 1) * retains)
+        validation_ids = ids[validation_slice]
+        assert len(validation_ids) == retains
 
     training_ids: list[str] = [e for e in ids if e not in validation_ids]
     assert (len(training_ids) + len(validation_ids)) == len(ids)
@@ -223,7 +234,7 @@ def main(args: argparse.Namespace):
     training_ids: list[str]
     validation_ids: list[str]
     test_ids: list[str]
-    training_ids, validation_ids, test_ids = get_splits(src_path, args.retains, args.fold)
+    training_ids, validation_ids, test_ids = get_splits(src_path, args.retains, args.fold, args.split_file)
 
     resolution_dict: dict[str, tuple[float, float, float]] = {}
 
@@ -253,6 +264,10 @@ def main(args: argparse.Namespace):
         for key, val in zip(split_ids, resolutions):
             resolution_dict[key] = val
 
+    with open(dest_path / "split.json", 'w') as f:
+        json.dump({"source": str(args.split_file) if args.split_file else f"random: seed {args.seed}, retains {args.retains}, fold {args.fold}",
+                   "training": sorted(training_ids), "validation": sorted(validation_ids)}, f, indent=2)
+
     with open(dest_path / "spacing.pkl", 'wb') as f:
         pickle.dump(resolution_dict, f, pickle.HIGHEST_PROTOCOL)
         print(f"Saved spacing dictionnary to {f}")
@@ -267,6 +282,8 @@ def get_args() -> argparse.Namespace:
     parser.add_argument('--retains', type=int, default=25, help="Number of retained patient for the validation data")
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--fold', type=int, default=0)
+    parser.add_argument('--split_file', type=Path, default=None,
+                        help="JSON from scripts/make_split.py with the validation patient ids; overrides --retains/--fold")
     parser.add_argument('--process', '-p', type=int, default=1,
                         help="The number of cores to use for processing")
     parser.add_argument('--window', type=float, nargs=2, default=None, metavar=("LOW", "HIGH"),
