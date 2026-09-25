@@ -42,7 +42,7 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # repo root: pipeline modules live there
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "legacy" / "aorta_recovery"))  # retrieve_aorta
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "archive" / "aorta_recovery"))  # retrieve_aorta
 
 import retrieve_aorta as ra
 from retrieve_aorta import load_labels, split_patient, shared_slices, dice, N_MONTAGE_SLICES
