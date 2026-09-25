@@ -1,0 +1,751 @@
+{
+  "source_dir": "data/segthor_train_full",
+  "n_train": 32,
+  "n_validation": 8,
+  "seed": 13,
+  "criteria": {
+    "contrast": "aorta median HU > 100.0",
+    "spacing_outlier": "in-plane spacing outside (0.95, 1.0) mm",
+    "volume_outlier": "any organ volume > 1.8 x cohort median"
+  },
+  "strata_counts": {
+    "contrast": {
+      "train": 10,
+      "validation": 2
+    },
+    "spacing_outlier": {
+      "train": 3,
+      "validation": 1
+    },
+    "volume_outlier": {
+      "train": 4,
+      "validation": 1
+    }
+  },
+  "training": [
+    "Patient_01",
+    "Patient_02",
+    "Patient_03",
+    "Patient_04",
+    "Patient_05",
+    "Patient_06",
+    "Patient_07",
+    "Patient_08",
+    "Patient_11",
+    "Patient_13",
+    "Patient_14",
+    "Patient_16",
+    "Patient_18",
+    "Patient_20",
+    "Patient_21",
+    "Patient_22",
+    "Patient_23",
+    "Patient_24",
+    "Patient_25",
+    "Patient_26",
+    "Patient_27",
+    "Patient_28",
+    "Patient_29",
+    "Patient_30",
+    "Patient_31",
+    "Patient_32",
+    "Patient_33",
+    "Patient_34",
+    "Patient_35",
+    "Patient_36",
+    "Patient_39",
+    "Patient_40"
+  ],
+  "validation": [
+    "Patient_09",
+    "Patient_10",
+    "Patient_12",
+    "Patient_15",
+    "Patient_17",
+    "Patient_19",
+    "Patient_37",
+    "Patient_38"
+  ],
+  "patients": [
+    {
+      "id": "Patient_01",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.0
+      ],
+      "slices": 229,
+      "aorta_median_hu": 37.0,
+      "esophagus_ml": 61.8,
+      "heart_ml": 697.4,
+      "trachea_ml": 61.1,
+      "aorta_ml": 203.2,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_02",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 246,
+      "aorta_median_hu": 171.0,
+      "esophagus_ml": 46.3,
+      "heart_ml": 857.4,
+      "trachea_ml": 34.0,
+      "aorta_ml": 204.9,
+      "contrast": true,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_03",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 147,
+      "aorta_median_hu": 209.0,
+      "esophagus_ml": 32.1,
+      "heart_ml": 438.0,
+      "trachea_ml": 30.1,
+      "aorta_ml": 94.8,
+      "contrast": true,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_04",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 158,
+      "aorta_median_hu": 45.0,
+      "esophagus_ml": 44.7,
+      "heart_ml": 788.0,
+      "trachea_ml": 52.0,
+      "aorta_ml": 356.6,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_05",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.0
+      ],
+      "slices": 284,
+      "aorta_median_hu": 43.0,
+      "esophagus_ml": 81.1,
+      "heart_ml": 866.7,
+      "trachea_ml": 49.3,
+      "aorta_ml": 224.1,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_06",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 199,
+      "aorta_median_hu": 196.0,
+      "esophagus_ml": 45.4,
+      "heart_ml": 899.9,
+      "trachea_ml": 41.6,
+      "aorta_ml": 285.9,
+      "contrast": true,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_07",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.0
+      ],
+      "slices": 179,
+      "aorta_median_hu": 34.0,
+      "esophagus_ml": 48.4,
+      "heart_ml": 697.8,
+      "trachea_ml": 28.2,
+      "aorta_ml": 171.4,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_08",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 171,
+      "aorta_median_hu": 45.0,
+      "esophagus_ml": 35.8,
+      "heart_ml": 607.2,
+      "trachea_ml": 41.2,
+      "aorta_ml": 201.6,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_09",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 154,
+      "aorta_median_hu": 137.0,
+      "esophagus_ml": 38.4,
+      "heart_ml": 872.9,
+      "trachea_ml": 56.0,
+      "aorta_ml": 141.9,
+      "contrast": true,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_10",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.0
+      ],
+      "slices": 163,
+      "aorta_median_hu": 42.0,
+      "esophagus_ml": 52.0,
+      "heart_ml": 931.4,
+      "trachea_ml": 38.0,
+      "aorta_ml": 207.4,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_11",
+      "spacing_mm": [
+        1.27,
+        1.27,
+        2.5
+      ],
+      "slices": 180,
+      "aorta_median_hu": 34.0,
+      "esophagus_ml": 86.9,
+      "heart_ml": 848.8,
+      "trachea_ml": 40.1,
+      "aorta_ml": 181.3,
+      "contrast": false,
+      "spacing_outlier": true,
+      "volume_outlier": true
+    },
+    {
+      "id": "Patient_12",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.0
+      ],
+      "slices": 171,
+      "aorta_median_hu": 41.0,
+      "esophagus_ml": 46.4,
+      "heart_ml": 878.4,
+      "trachea_ml": 32.6,
+      "aorta_ml": 285.5,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_13",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.0
+      ],
+      "slices": 228,
+      "aorta_median_hu": 43.0,
+      "esophagus_ml": 45.2,
+      "heart_ml": 905.0,
+      "trachea_ml": 32.1,
+      "aorta_ml": 254.0,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_14",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 162,
+      "aorta_median_hu": 41.0,
+      "esophagus_ml": 37.8,
+      "heart_ml": 536.9,
+      "trachea_ml": 27.6,
+      "aorta_ml": 173.1,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_15",
+      "spacing_mm": [
+        0.896,
+        0.896,
+        2.5
+      ],
+      "slices": 150,
+      "aorta_median_hu": 35.0,
+      "esophagus_ml": 57.1,
+      "heart_ml": 1098.0,
+      "trachea_ml": 72.9,
+      "aorta_ml": 465.2,
+      "contrast": false,
+      "spacing_outlier": true,
+      "volume_outlier": true
+    },
+    {
+      "id": "Patient_16",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 166,
+      "aorta_median_hu": 179.0,
+      "esophagus_ml": 42.2,
+      "heart_ml": 983.4,
+      "trachea_ml": 38.0,
+      "aorta_ml": 163.4,
+      "contrast": true,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_17",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 166,
+      "aorta_median_hu": 34.0,
+      "esophagus_ml": 31.4,
+      "heart_ml": 532.6,
+      "trachea_ml": 35.2,
+      "aorta_ml": 139.4,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_18",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 183,
+      "aorta_median_hu": 50.0,
+      "esophagus_ml": 57.7,
+      "heart_ml": 1829.3,
+      "trachea_ml": 39.5,
+      "aorta_ml": 231.4,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": true
+    },
+    {
+      "id": "Patient_19",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 190,
+      "aorta_median_hu": 42.0,
+      "esophagus_ml": 38.6,
+      "heart_ml": 856.9,
+      "trachea_ml": 48.0,
+      "aorta_ml": 170.7,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_20",
+      "spacing_mm": [
+        1.367,
+        1.367,
+        2.5
+      ],
+      "slices": 206,
+      "aorta_median_hu": 35.0,
+      "esophagus_ml": 49.2,
+      "heart_ml": 1261.0,
+      "trachea_ml": 33.7,
+      "aorta_ml": 202.9,
+      "contrast": false,
+      "spacing_outlier": true,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_21",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 158,
+      "aorta_median_hu": 40.0,
+      "esophagus_ml": 31.8,
+      "heart_ml": 763.3,
+      "trachea_ml": 48.7,
+      "aorta_ml": 245.2,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_22",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 181,
+      "aorta_median_hu": 230.0,
+      "esophagus_ml": 30.6,
+      "heart_ml": 860.7,
+      "trachea_ml": 42.5,
+      "aorta_ml": 141.3,
+      "contrast": true,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_23",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 153,
+      "aorta_median_hu": 36.0,
+      "esophagus_ml": 52.6,
+      "heart_ml": 785.6,
+      "trachea_ml": 29.1,
+      "aorta_ml": 214.9,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_24",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 168,
+      "aorta_median_hu": 39.0,
+      "esophagus_ml": 48.6,
+      "heart_ml": 870.0,
+      "trachea_ml": 37.0,
+      "aorta_ml": 290.7,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_25",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 150,
+      "aorta_median_hu": 168.0,
+      "esophagus_ml": 48.6,
+      "heart_ml": 789.9,
+      "trachea_ml": 40.6,
+      "aorta_ml": 172.8,
+      "contrast": true,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_26",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.0
+      ],
+      "slices": 247,
+      "aorta_median_hu": 30.0,
+      "esophagus_ml": 43.2,
+      "heart_ml": 793.6,
+      "trachea_ml": 24.5,
+      "aorta_ml": 209.0,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_27",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.0
+      ],
+      "slices": 213,
+      "aorta_median_hu": 35.0,
+      "esophagus_ml": 43.0,
+      "heart_ml": 845.1,
+      "trachea_ml": 31.0,
+      "aorta_ml": 215.9,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_28",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 179,
+      "aorta_median_hu": 207.0,
+      "esophagus_ml": 55.0,
+      "heart_ml": 1677.5,
+      "trachea_ml": 32.3,
+      "aorta_ml": 265.2,
+      "contrast": true,
+      "spacing_outlier": false,
+      "volume_outlier": true
+    },
+    {
+      "id": "Patient_29",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 173,
+      "aorta_median_hu": 54.0,
+      "esophagus_ml": 42.9,
+      "heart_ml": 748.6,
+      "trachea_ml": 42.9,
+      "aorta_ml": 289.5,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_30",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 171,
+      "aorta_median_hu": 40.0,
+      "esophagus_ml": 58.6,
+      "heart_ml": 962.7,
+      "trachea_ml": 41.8,
+      "aorta_ml": 278.8,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_31",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 148,
+      "aorta_median_hu": 260.0,
+      "esophagus_ml": 37.1,
+      "heart_ml": 709.3,
+      "trachea_ml": 35.5,
+      "aorta_ml": 170.2,
+      "contrast": true,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_32",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 157,
+      "aorta_median_hu": 163.0,
+      "esophagus_ml": 74.3,
+      "heart_ml": 1140.4,
+      "trachea_ml": 41.3,
+      "aorta_ml": 238.7,
+      "contrast": true,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_33",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.0
+      ],
+      "slices": 263,
+      "aorta_median_hu": 37.0,
+      "esophagus_ml": 48.3,
+      "heart_ml": 776.6,
+      "trachea_ml": 21.7,
+      "aorta_ml": 213.3,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_34",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 192,
+      "aorta_median_hu": 162.0,
+      "esophagus_ml": 169.5,
+      "heart_ml": 943.0,
+      "trachea_ml": 47.1,
+      "aorta_ml": 208.2,
+      "contrast": true,
+      "spacing_outlier": false,
+      "volume_outlier": true
+    },
+    {
+      "id": "Patient_35",
+      "spacing_mm": [
+        1.367,
+        1.367,
+        2.0
+      ],
+      "slices": 181,
+      "aorta_median_hu": 37.0,
+      "esophagus_ml": 37.7,
+      "heart_ml": 836.2,
+      "trachea_ml": 35.6,
+      "aorta_ml": 159.8,
+      "contrast": false,
+      "spacing_outlier": true,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_36",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.0
+      ],
+      "slices": 188,
+      "aorta_median_hu": 45.0,
+      "esophagus_ml": 56.3,
+      "heart_ml": 765.1,
+      "trachea_ml": 38.1,
+      "aorta_ml": 268.5,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_37",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 176,
+      "aorta_median_hu": 45.0,
+      "esophagus_ml": 46.2,
+      "heart_ml": 816.3,
+      "trachea_ml": 28.9,
+      "aorta_ml": 180.0,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_38",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 159,
+      "aorta_median_hu": 231.0,
+      "esophagus_ml": 43.1,
+      "heart_ml": 752.5,
+      "trachea_ml": 39.6,
+      "aorta_ml": 143.0,
+      "contrast": true,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_39",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.0
+      ],
+      "slices": 228,
+      "aorta_median_hu": 35.0,
+      "esophagus_ml": 42.5,
+      "heart_ml": 862.6,
+      "trachea_ml": 23.5,
+      "aorta_ml": 190.3,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    },
+    {
+      "id": "Patient_40",
+      "spacing_mm": [
+        0.977,
+        0.977,
+        2.5
+      ],
+      "slices": 203,
+      "aorta_median_hu": 44.0,
+      "esophagus_ml": 41.2,
+      "heart_ml": 772.0,
+      "trachea_ml": 33.5,
+      "aorta_ml": 189.0,
+      "contrast": false,
+      "spacing_outlier": false,
+      "volume_outlier": false
+    }
+  ]
+}
