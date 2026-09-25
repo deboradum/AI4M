@@ -13,3 +13,4 @@ temperature: 1.0
 optimizer: "Adam"
 seed: 123
 patience: -1  # -1 for disabling
+loss_fn: "ce"  # added: key became required with the loss registry; these were plain CE runs

@@ -112,6 +112,11 @@ def make_slice_windows(images: list[Path], in_slices: int) -> dict[Path, tuple[P
     """
     assert in_slices in [1, 3], f"Only 1 and 3 input slices are supported, got {in_slices}"
 
+    if in_slices == 1:
+        # A single-slice window needs no neighbours, so no naming convention either:
+        # keeps the TOY2 data (00000.png) and any non-SegTHOR naming usable for 2D training.
+        return {image: (image,) for image in images}
+
     by_patient: dict[str, list[tuple[int, Path]]] = defaultdict(list)
     for image in images:
         patient_id, z = slice_id(image)
