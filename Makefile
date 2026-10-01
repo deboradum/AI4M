@@ -88,9 +88,30 @@ data/segthor_train_full: data/segthor_train_full.zip
 	unzip -q $< -d $@_tmp
 	mv $@_tmp $@
 
+data/SEGTHOR_FULL: data/segthor_train_full
+	$(info $(green)python slice_segthor.py (full set)$(reset))
+	rm -rf $@_tmp $@
+	python $(CFLAGS) slice_segthor.py --source_dir data/segthor_train_full --dest_dir $@_tmp \
+		--shape 256 256 --split_file configs/splits/segthor_full_32_8.json -p -1
+	mv $@_tmp $@
+
 data/SEGTHOR_FULL_huwide: data/segthor_train_full
 	$(info $(green)python slice_segthor.py (full set, window -1000 1000)$(reset))
 	rm -rf $@_tmp $@
 	python $(CFLAGS) slice_segthor.py --source_dir data/segthor_train_full --dest_dir $@_tmp \
 		--shape 256 256 --split_file configs/splits/segthor_full_32_8.json -p -1 --window -1000 1000
+	mv $@_tmp $@
+
+data/SEGTHOR_FULL_humid: data/segthor_train_full
+	$(info $(green)python slice_segthor.py (full set, window -1000 600)$(reset))
+	rm -rf $@_tmp $@
+	python $(CFLAGS) slice_segthor.py --source_dir data/segthor_train_full --dest_dir $@_tmp \
+		--shape 256 256 --split_file configs/splits/segthor_full_32_8.json -p -1 --window -1000 600
+	mv $@_tmp $@
+
+data/SEGTHOR_resampled: data/segthor_train_full
+	$(info $(green)python $(CFLAGS) slice_segthor.py (full set, Resampled)$(reset))
+	rm -rf $@_tmp $@
+	python $(CFLAGS) slice_segthor.py --source_dir data/segthor_train_full --dest_dir $@_tmp \
+		--shape 256 256 --split_file configs/splits/segthor_full_32_8.json --resample --target_spacing 1.0 1.0 2.5
 	mv $@_tmp $@
