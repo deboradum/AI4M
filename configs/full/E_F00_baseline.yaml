@@ -1,0 +1,16 @@
+dataset: "SEGTHOR_FULL"
+mode: "full"
+loss_fn: "ce"
+K: 5
+net_name: "ENet"
+B: 8
+kernels: 8
+factor: 2
+lr: 0.0005
+betas: [0.9, 0.999]
+epochs: 100
+num_workers: 5
+temperature: 1.0
+optimizer: "Adam"
+seed: null  # unseeded run (main.py skips seeding when null)
+patience: -1  # -1 for disabling
