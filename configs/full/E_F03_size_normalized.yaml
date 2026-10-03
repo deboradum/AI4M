@@ -12,5 +12,5 @@ epochs: 100
 num_workers: 5
 temperature: 1.0
 optimizer: "Adam"
-seed: null  # unseeded run (main.py skips seeding when null)
+seed: 123
 patience: -1  # -1 for disabling
