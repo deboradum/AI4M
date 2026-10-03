@@ -109,7 +109,7 @@ data/SEGTHOR_FULL_humid: data/segthor_train_full
 		--shape 256 256 --split_file configs/splits/segthor_full_32_8.json -p -1 --window -1000 600
 	mv $@_tmp $@
 
-data/SEGTHOR_resampled: data/segthor_train_full
+data/SEGTHOR_FULL_resampled: data/segthor_train_full
 	$(info $(green)python $(CFLAGS) slice_segthor.py (full set, Resampled)$(reset))
 	rm -rf $@_tmp $@
 	python $(CFLAGS) slice_segthor.py --source_dir data/segthor_train_full --dest_dir $@_tmp \
