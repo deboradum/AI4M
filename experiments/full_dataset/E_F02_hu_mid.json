@@ -1,10 +1,10 @@
 {
     "exp_id": "E_F02_hu_mid",
     "parent_id": "E_F00_baseline",
-    "status": "registered",
+    "status": "completed",
     "runtime_config": "configs/full/E_F02_hu_mid.yaml",
-    "runtime_results": "results/",
-    "runtime_volumes": "volumes/",
+    "runtime_results": "results/full/E_F02_hu_mid",
+    "runtime_volumes": "results/full/E_F02_hu_mid/eval",
     "change": "Baseline",
     "hypothesis": "",
     "plan_reference": "",
@@ -12,11 +12,11 @@
         "name": "SEGTHOR_FULL_humid",
         "source": "segthor_train_full",
         "split": {
-            "training_patients": ,
-            "validation_patients": ,
-            "retains": ,
-            "seed": ,
-            "fold":
+            "training_patients": null,
+            "validation_patients": 8,
+            "retains": null,
+            "seed": 123,
+            "fold": null
         },
         "resolution": [
             256,
@@ -59,60 +59,90 @@
         "augmentation": false
     },
     "results": {
-        "epochs_completed": ,
-        "best_epoch_by_validation_dice": ,
+        "epochs_completed": 100,
+        "best_epoch_by_validation_dice": 52,
         "training": {
-            "device": ,
-            "parameter_count": ,
-            "total_minutes": ,
-            "best_2d_validation_dice":
+            "device": "cpu",
+            "parameter_count": null,
+            "total_minutes": null,
+            "best_2d_validation_dice": 0.863
         },
         "inference": {
-            "validation_patients": ,
-            "seconds_per_patient_forward_and_stitch":
+            "validation_patients": 8,
+            "seconds_per_patient_forward_and_stitch": 9.16
         },
         "metrics_3d": {
             "dice_mean": {
-                "esophagus": ,
-                "heart": ,
-                "trachea": ,
-                "aorta": ,
-                "foreground_mean":
+                "esophagus": 0.568,
+                "heart": 0.926,
+                "trachea": 0.825,
+                "aorta": 0.819,
+                "foreground_mean": 0.784
+            },
+            "dice_std": {
+                "esophagus": 0.101,
+                "heart": 0.012,
+                "trachea": 0.088,
+                "aorta": 0.082
             },
             "iou_mean": {
-                "esophagus": ,
-                "heart": ,
-                "trachea": ,
-                "aorta": ,
-                "foreground_mean":
+                "esophagus": 0.403,
+                "heart": 0.863,
+                "trachea": 0.711,
+                "aorta": 0.700,
+                "foreground_mean": 0.669
+            },
+            "iou_std": {
+                "esophagus": 0.094,
+                "heart": 0.021,
+                "trachea": 0.112,
+                "aorta": 0.106
             },
             "hd95_mm_mean": {
-                "esophagus": ,
-                "heart": ,
-                "trachea": ,
-                "aorta": ,
-                "foreground_mean":
+                "esophagus": 18.981,
+                "heart": 10.336,
+                "trachea": 10.152,
+                "aorta": 11.534,
+                "foreground_mean": 12.751
+            },
+            "hd95_mm_std": {
+                "esophagus": 13.770,
+                "heart": 4.947,
+                "trachea": 8.828,
+                "aorta": 6.006
             },
             "assd_mm_mean": {
-                "esophagus": ,
-                "heart": ,
-                "trachea": ,
-                "aorta": ,
-                "foreground_mean":
+                "esophagus": 3.666,
+                "heart": 2.753,
+                "trachea": 1.706,
+                "aorta": 2.558,
+                "foreground_mean": 2.671
+            },
+            "assd_mm_std": {
+                "esophagus": 1.911,
+                "heart": 0.824,
+                "trachea": 1.095,
+                "aorta": 1.120
             },
             "nsd_mean": {
-                "esophagus": ,
-                "heart": ,
-                "trachea": ,
-                "aorta": ,
-                "foreground_mean":
+                "esophagus": 0.553,
+                "heart": 0.560,
+                "trachea": 0.815,
+                "aorta": 0.645,
+                "foreground_mean": 0.643
+            },
+            "nsd_std": {
+                "esophagus": 0.094,
+                "heart": 0.072,
+                "trachea": 0.111,
+                "aorta": 0.160
             }
         },
         "artifacts": {
-            "metrics_3d": "results/",
-            "prediction_volumes": "volumes/",
-            "training_log": "results/",
-            "inference_log": "volumes/"
+            "metrics_3d": "results/full/E_F02_hu_mid/eval/metrics",
+            "prediction_volumes": "results/full/E_F02_hu_mid/eval/nii",
+            "training_log": "results/full/E_F02_hu_mid",
+            "inference_log": "results/full/E_F02_hu_mid/eval/timing.txt"
         }
     }
 }
