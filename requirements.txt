@@ -13,3 +13,4 @@ ipykernel
 pandas
 seaborn
 scipy
+wandb==0.30.0

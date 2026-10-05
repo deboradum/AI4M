@@ -1,0 +1,79 @@
+{
+  "exp_id": "E_F04_unet_ce_dice_augment_150ep_es20",
+  "parent_id": "E_F01_hu_wide",
+  "status": "registered",
+  "runtime_config": "configs/full/E_F04_unet_ce_dice_augment_150ep_es20.yaml",
+  "runtime_results": "results/full/E_F04_unet_ce_dice_augment_150ep_es20",
+  "runtime_volumes": "results/full/E_F04_unet_ce_dice_augment_150ep_es20/eval",
+  "change": "Transfer E024's plain 2D U-Net, CE+Dice loss, and safe no-elastic augmentation to the full course-labelled HU-wide dataset. The run has a 150-epoch maximum and validation-Dice early stopping after 20 non-improving epochs.",
+  "hypothesis": "The E024 recipe will improve on E_F01's HU-wide ENet/CE/no-augmentation baseline when trained on the larger native four-organ dataset.",
+  "plan_reference": "Full-dataset transfer of E024; composite recipe comparison against E_F01, not an architecture-only ablation.",
+  "dataset": {
+    "name": "SEGTHOR_FULL_huwide",
+    "source": "segthor_train_full",
+    "split": {
+      "training_patients": 32,
+      "validation_patients": 8,
+      "split_file": "configs/splits/segthor_full_32_8.json",
+      "seed": 123
+    },
+    "resolution": [256, 256],
+    "window_hu": [-1000, 1000],
+    "size_normalized": false,
+    "classes": ["background", "esophagus", "heart", "trachea", "aorta"],
+    "label_caveat": "Native course-provided four-organ labels; unlike E017-E024, no aorta recovery is used."
+  },
+  "model": {
+    "name": "UNet",
+    "base_channels": 32,
+    "levels": 4,
+    "encoder_channels": [32, 64, 128, 256],
+    "bottleneck_channels": 512,
+    "normalization": "BatchNorm2d",
+    "activation": "PReLU",
+    "downsampling": "2x2 MaxPool2d",
+    "upsampling": "2x2 ConvTranspose2d",
+    "in_slices": 1,
+    "parameter_count": 7762135
+  },
+  "training": {
+    "mode": "full",
+    "loss": "CEDiceLoss",
+    "optimizer": "Adam",
+    "learning_rate": 0.0005,
+    "betas": [0.9, 0.999],
+    "batch_size": 8,
+    "epochs_max": 150,
+    "early_stopping_patience": 20,
+    "temperature": 1.0,
+    "seed": 123,
+    "scheduler": null,
+    "num_workers": 0,
+    "augmentation": {
+      "rotation_deg": 15.0,
+      "scale": [0.9, 1.1],
+      "intensity_shift": 0.1,
+      "elastic_alpha": 0.0,
+      "elastic_sigma": 4.0,
+      "horizontal_flip": false
+    }
+  },
+  "tracking": {
+    "wandb": {
+      "enabled": true,
+      "project": "AI4M",
+      "entity": null,
+      "run_name": "E_F04_unet_ce_dice_augment_150ep_es20",
+      "tags": ["full_dataset", "huwide", "unet", "ce_dice", "augmentation"],
+      "version": "0.30.0",
+      "data_policy": "Scalar metrics and the YAML configuration only; no images, masks, predictions, checkpoints, or source code."
+    }
+  },
+  "what_to_check": [
+    "The GPU preflight must initialize CEDiceLoss and execute one augmented U-Net batch on SEGTHOR_FULL_huwide.",
+    "Record the actual completed epoch count and the best validation-Dice epoch; 150 is a maximum, not a guaranteed duration.",
+    "Compare 3D metrics with E_F01_hu_wide, noting that this is a composite recipe transfer rather than an architecture-only comparison.",
+    "Report U-Net parameter count and GPU training time alongside accuracy."
+  ],
+  "results": null
+}
