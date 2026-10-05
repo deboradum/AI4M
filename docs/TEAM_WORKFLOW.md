@@ -175,6 +175,21 @@ sbatch \
 Continue only when the output reports `Preflight passed` and contains no
 exception.
 
+### Optional Weights & Biases logging
+
+W&B is disabled by default. A configuration that sets `wandb_enabled: true`
+logs only scalar configuration and epoch metrics; it does not upload CT slices,
+masks, predictions, checkpoints, or source code. Before submitting its
+preflight, authenticate once from a login node using the project environment:
+
+```bash
+wandb login
+```
+
+Use the team-provided W&B entity when one is required by setting
+`wandb_entity` in that experiment's config. The run name and project must be
+recorded in its compact experiment JSON.
+
 ## 7. Train
 
 Use a unique results folder for every experiment:
