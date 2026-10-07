@@ -53,7 +53,7 @@ Foreground mean = 3D Dice averaged over the scored organs, validation set.
 | architecture | E023_unet_aorta_75ep | part1+aorta | U-Net, CE, no augmentation | 0.752 |
 | combined | E024_unet_aorta_ce_dice_augment_75ep | part1+aorta | U-Net + E022's recipe | 0.781 |
 | combined | E_F04_unet_ce_dice_augment_150ep_es20.json | full | U-Net + CE+Dice + augmentation + HU window | **0.854** |
-| optimizer | E_F06_unet2d_adamw_cosine_150ep.json | full | E_F04 + AdamW (wd 1e-4) + cosine LR | running |
+| optimizer | E_F06_unet2d_adamw_cosine_150ep.json | full | E_F04 + AdamW (wd 1e-4) + cosine LR + 1/1/2.5 mm resampling | running |
 | input_2.5d | E_F05_unet25d_adamw_cosine_150ep.json | full | E_F06 + 3 adjacent slices | running |
 
 The loss sweep (weighted CE, focal, focal+Dice) is kept in `archive/loss_sweep/`.

@@ -115,3 +115,11 @@ data/SEGTHOR_FULL_resampled: data/segthor_train_full
 	python $(CFLAGS) slice_segthor.py --source_dir data/segthor_train_full --dest_dir $@_tmp \
 		--shape 256 256 --split_file configs/splits/segthor_full_32_8.json --resample --target_spacing 1.0 1.0 2.5
 	mv $@_tmp $@
+
+data/SEGTHOR_FULL_huwide_resampled: data/segthor_train_full
+	$(info $(green)python slice_segthor.py (full set, window -1000 1000, resampled 1.0 1.0 2.5)$(reset))
+	rm -rf $@_tmp $@
+	python $(CFLAGS) slice_segthor.py --source_dir data/segthor_train_full --dest_dir $@_tmp \
+		--shape 256 256 --split_file configs/splits/segthor_full_32_8.json -p -1 --window -1000 1000 \
+		--resample --target_spacing 1.0 1.0 2.5
+	mv $@_tmp $@

@@ -5,10 +5,10 @@
   "runtime_config": "configs/full/E_F05_unet25d_adamw_cosine_150ep.yaml",
   "runtime_results": "results/full/E_F05_unet25d_adamw_cosine_150ep",
   "runtime_volumes": "results/full/E_F05_unet25d_adamw_cosine_150ep/eval",
-  "change": "E_F06's recipe with three-slice input [z-1, z, z+1]; the only difference from E_F06 is in_slices.",
+  "change": "E_F06's recipe with three-slice input [z-1, z, z+1]; the only difference from E_F06 is in_slices. Data: HU window [-1000, 1000] plus resampling to 1.0/1.0/2.5 mm (E_F01 + E_F03).",
   "hypothesis": "Adjacent-slice context helps the thin, z-continuous organs (esophagus, trachea) that 2D slices see in isolation.",
   "dataset": {
-    "name": "SEGTHOR_FULL_huwide",
+    "name": "SEGTHOR_FULL_huwide_resampled",
     "source": "segthor_train_full",
     "split": {
       "training_patients": 32,
@@ -24,7 +24,7 @@
       -1000,
       1000
     ],
-    "size_normalized": false,
+    "size_normalized": true,
     "classes": [
       "background",
       "esophagus",
@@ -32,7 +32,12 @@
       "trachea",
       "aorta"
     ],
-    "label_caveat": "Native course-provided four-organ labels; unlike E017-E024, no aorta recovery is used."
+    "label_caveat": "Native course-provided four-organ labels; unlike E017-E024, no aorta recovery is used.",
+    "target_spacing_mm": [
+      1.0,
+      1.0,
+      2.5
+    ]
   },
   "model": {
     "name": "UNet",
