@@ -1,0 +1,72 @@
+{
+  "source_dir": "data/segthor_train_full",
+  "n_train": 32,
+  "n_validation": 8,
+  "fold": 0,
+  "n_folds": 5,
+  "base": "configs/splits/segthor_full_32_8.json",
+  "seed": 0,
+  "criteria": {
+    "contrast": "aorta median HU > 100.0",
+    "spacing_outlier": "in-plane spacing outside (0.95, 1.0) mm",
+    "volume_outlier": "any organ volume > 1.8 x cohort median"
+  },
+  "strata_counts": {
+    "contrast": {
+      "train": 10,
+      "validation": 2
+    },
+    "spacing_outlier": {
+      "train": 3,
+      "validation": 1
+    },
+    "volume_outlier": {
+      "train": 4,
+      "validation": 1
+    }
+  },
+  "training": [
+    "Patient_01",
+    "Patient_02",
+    "Patient_03",
+    "Patient_04",
+    "Patient_05",
+    "Patient_06",
+    "Patient_07",
+    "Patient_08",
+    "Patient_11",
+    "Patient_13",
+    "Patient_14",
+    "Patient_16",
+    "Patient_18",
+    "Patient_20",
+    "Patient_21",
+    "Patient_22",
+    "Patient_23",
+    "Patient_24",
+    "Patient_25",
+    "Patient_26",
+    "Patient_27",
+    "Patient_28",
+    "Patient_29",
+    "Patient_30",
+    "Patient_31",
+    "Patient_32",
+    "Patient_33",
+    "Patient_34",
+    "Patient_35",
+    "Patient_36",
+    "Patient_39",
+    "Patient_40"
+  ],
+  "validation": [
+    "Patient_09",
+    "Patient_10",
+    "Patient_12",
+    "Patient_15",
+    "Patient_17",
+    "Patient_19",
+    "Patient_37",
+    "Patient_38"
+  ]
+}
