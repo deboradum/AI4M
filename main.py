@@ -58,6 +58,7 @@ from segthor.losses import (CrossEntropy)
 from segthor.config import TrainConfig, NETWORKS
 from segthor.runstats import RunStats
 from segthor.metrics import iou_coef, precision_coef, recall_coef
+from segthor.wandb_logger import init_run as init_wandb_run, log_epoch as log_wandb_epoch, finish_run as finish_wandb_run
 
 def set_seed(seed: int | None):
     if seed is None:
@@ -220,6 +221,7 @@ def runTraining(args, config: TrainConfig):
 
     stats = RunStats(net, device, args.dest,
                      n_train=len(train_loader.dataset), n_val=len(val_loader.dataset), batch_size=config.B)
+    wandb_run = init_wandb_run(config, args.dest)
 
     for e in range(config.epochs):
         for m in ['train', 'val']:
@@ -360,10 +362,32 @@ def runTraining(args, config: TrainConfig):
 
         stats.epoch_end(e, current_dice, best_epoch, best_dice)
 
+        # Scalar-only W&B logging.  Metrics are derived from the existing
+        # in-memory logs, so enabling it cannot change optimisation, model
+        # selection, checkpointing, or any stored prediction.
+        wandb_metrics: dict[str, float | int] = {
+            "epoch": e + 1,
+            "learning_rate": optimizer.param_groups[0]["lr"],
+            "train/loss": log_loss_tra[e].mean().item(),
+            "val/loss": log_loss_val[e].mean().item(),
+            "train/dice_foreground": log_dice_tra[e, :, 1:].mean().item(),
+            "val/dice_foreground": current_dice,
+            "val/iou_foreground": current_iou,
+            "val/precision_foreground": current_prec,
+            "val/recall_foreground": current_rec,
+            "best/val_dice_foreground": best_dice,
+            "best/epoch": best_epoch + 1,
+        }
+        for k in range(1, K):
+            wandb_metrics[f"val/dice_class_{k}"] = log_dice_val[e, :, k].mean().item()
+        log_wandb_epoch(wandb_run, wandb_metrics)
+
         # patience=-1 disables it
         if config.patience != -1 and epochs_without_improvement >= config.patience:
             print(f">>> Early stopping triggered after {e} epochs (no improvement for {config.patience} epochs).")
             break
+
+    finish_wandb_run(wandb_run)
 
 def main():
     parser = argparse.ArgumentParser()
