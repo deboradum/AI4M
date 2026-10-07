@@ -1,0 +1,101 @@
+{
+  "exp_id": "E_F06_unet2d_adamw_cosine_150ep",
+  "parent_id": "E_F04_unet_ce_dice_augment_150ep_es20",
+  "status": "running",
+  "runtime_config": "configs/full/E_F06_unet2d_adamw_cosine_150ep.yaml",
+  "runtime_results": "results/full/E_F06_unet2d_adamw_cosine_150ep",
+  "runtime_volumes": "results/full/E_F06_unet2d_adamw_cosine_150ep/eval",
+  "change": "E_F04's recipe with AdamW (weight decay 1e-4) and cosine learning-rate decay to 0 over a fixed 150 epochs; early stopping off, best checkpoint still chosen by validation Dice. Also num_workers 8.",
+  "hypothesis": "Every run so far peaked at or near its last epoch under a constant learning rate; annealing it (with decoupled weight decay) lets the model settle into a better minimum.",
+  "dataset": {
+    "name": "SEGTHOR_FULL_huwide",
+    "source": "segthor_train_full",
+    "split": {
+      "training_patients": 32,
+      "validation_patients": 8,
+      "split_file": "configs/splits/segthor_full_32_8.json",
+      "seed": 13
+    },
+    "resolution": [
+      256,
+      256
+    ],
+    "window_hu": [
+      -1000,
+      1000
+    ],
+    "size_normalized": false,
+    "classes": [
+      "background",
+      "esophagus",
+      "heart",
+      "trachea",
+      "aorta"
+    ],
+    "label_caveat": "Native course-provided four-organ labels; unlike E017-E024, no aorta recovery is used."
+  },
+  "model": {
+    "name": "UNet",
+    "base_channels": 32,
+    "levels": 4,
+    "encoder_channels": [
+      32,
+      64,
+      128,
+      256
+    ],
+    "bottleneck_channels": 512,
+    "normalization": "BatchNorm2d",
+    "activation": "PReLU",
+    "downsampling": "2x2 MaxPool2d",
+    "upsampling": "2x2 ConvTranspose2d",
+    "in_slices": 1,
+    "parameter_count": 7762135
+  },
+  "training": {
+    "mode": "full",
+    "loss": "CEDiceLoss",
+    "optimizer": "AdamW",
+    "learning_rate": 0.0005,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "batch_size": 8,
+    "epochs_max": 150,
+    "early_stopping_patience": null,
+    "temperature": 1.0,
+    "seed": 123,
+    "scheduler": {
+      "name": "CosineAnnealingLR",
+      "T_max": 150,
+      "eta_min": 0.0
+    },
+    "num_workers": 8,
+    "augmentation": {
+      "rotation_deg": 15.0,
+      "scale": [
+        0.9,
+        1.1
+      ],
+      "intensity_shift": 0.1,
+      "elastic_alpha": 0.0,
+      "elastic_sigma": 4.0,
+      "horizontal_flip": false
+    },
+    "weight_decay": 0.0001
+  },
+  "tracking": {
+    "wandb": {
+      "enabled": true,
+      "entity": "ai4miFrancesco",
+      "project": "AI4M",
+      "run_name": "E_F06_unet2d_adamw_cosine_150ep"
+    }
+  },
+  "what_to_check": [
+    "Compare 3D Dice per patient (paired) against the parent on the same 8 validation patients.",
+    "Record the best validation-Dice epoch: with cosine decay it should sit near the end."
+  ],
+  "notes": "Split seed is 13, as in configs/splits/segthor_full_32_8.json (E_F04's record says 123; the split file is authoritative). Submitted on Snellius H100 2026-10-07, job script scripts/train_eval_full.sbatch."
+}
