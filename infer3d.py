@@ -64,7 +64,8 @@ def main(args: argparse.Namespace) -> None:
     nii_dest.mkdir(parents=True, exist_ok=True)
     t0 = time.perf_counter()
     for id_ in tqdm_(sorted(png_groups), desc=">> Stitching"):
-        stitch_patient(id_, png_groups[id_], nii_dest, K, args.scan_pattern)
+        stitch_patient(id_, png_groups[id_], nii_dest, K, args.scan_pattern,
+                       resample=args.resample, target_spacing=tuple(args.target_spacing))
     t_stitch = time.perf_counter() - t0
 
     n = len(png_groups)
@@ -84,6 +85,9 @@ def get_args() -> argparse.Namespace:
                         help="e.g. 'data/segthor_train_full/train/{id_}/{id_}.nii.gz'")
     parser.add_argument('--grp_regex', type=str, default=r"(Patient_\d+)_\d+")
     parser.add_argument('--overlap', type=float, default=0.5)
+    parser.add_argument('--resample', action='store_true',
+                        help="Undo the physical resampling when stitching (resampled datasets)")
+    parser.add_argument('--target_spacing', type=float, nargs=3, default=[1.0, 1.0, 2.5])
     parser.add_argument('--gpu', action='store_true')
     args = parser.parse_args()
     pprint(vars(args))
