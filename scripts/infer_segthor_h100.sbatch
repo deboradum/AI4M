@@ -1,4 +1,5 @@
 #!/bin/bash
+# Legacy: 20-patient part1 runs (E0xx) only. Full-dataset runs use train_eval_full.sbatch.
 #SBATCH --partition=gpu_h100
 #SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=6
