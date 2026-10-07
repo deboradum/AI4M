@@ -3,8 +3,9 @@
 # the learning rate to 0 over 150 epochs.  Early stopping is off because the
 # schedule only reaches its low learning rates at the end; the checkpoint is
 # still chosen by best validation Dice.  num_workers 8: the loader fix makes
-# workers safe on Snellius and 2.5D reads three PNGs per sample.
-dataset: "SEGTHOR_FULL_huwide"
+# workers safe on Snellius and 2.5D reads three PNGs per sample.  Data: HU
+# window [-1000, 1000] and resampling to 1.0/1.0/2.5 mm (E_F01 + E_F03).
+dataset: "SEGTHOR_FULL_huwide_resampled"
 mode: "full"
 loss_fn: "ce_dice"
 K: 5
@@ -34,4 +35,4 @@ aug_elastic_sigma: 4.0
 wandb_enabled: true
 wandb_project: "AI4M"
 wandb_run_name: "E_F05_unet25d_adamw_cosine_150ep"
-wandb_tags: ["full_dataset", "huwide", "unet", "ce_dice", "augmentation", "2.5d", "adamw", "cosine"]
+wandb_tags: ["full_dataset", "huwide", "resampled", "unet", "ce_dice", "augmentation", "2.5d", "adamw", "cosine"]
