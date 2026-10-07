@@ -22,7 +22,7 @@ segthor/        the package the commands import
   dataset.py · losses.py · utils.py · runstats.py · metrics.py
   models/         ENet.py · UNet.py · ShallowNet.py
 configs/        one E0xx_name.yaml per experiment; defaults/ per dataset
-experiments/    one folder per registered run: config.json (+ per-patient csv)
+experiments/    records by <model>/<kind of change>/<run>; index in experiments/README.md
 scripts/        launchers (*.sbatch), preflight, check_labels, gen_two_circles
 analysis/       data exploration and figure scripts; analysis/figures/ is generated and gitignored
 docs/           this guide, MODELS.md, PLAN.md, figures/ (course readme images)
@@ -115,7 +115,8 @@ unique name in the existing style, for example `E010_large_enet`.
 Before training, create:
 
 - `configs/E010_large_enet.yaml` — the runnable configuration;
-- `experiments/E010_large_enet/config.json` — parent, hypothesis, and result;
+- `experiments/ENet_large/architecture/E010_large_enet/config.json` — parent, hypothesis, and result
+  (`experiments/<model>/<kind>/`, plus a row in `experiments/README.md`);
 - one matching row in `EXPERIMENTS.md`.
 
 Preserve the parent data, split, seed, loss, optimizer, batch size, epochs,
@@ -254,7 +255,7 @@ python summarize.py results/E001_baseline results/E010_large_enet \
 ## 9. Record and commit results
 
 After 3D metrics finish, update the matching registry row and
-`experiments/<experiment-id>/config.json` with status, commit, cost, and mean
+`experiments/<model>/<kind>/<experiment-id>` record with status, commit, cost, and mean
 3D metrics.
 
 Commit source, tests, configs, and compact experiment records. Do not commit
