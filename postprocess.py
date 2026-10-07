@@ -39,6 +39,7 @@ from scipy.ndimage import (
     binary_closing,
     binary_fill_holes,
     binary_opening,
+    distance_transform_edt,
     generate_binary_structure,
     label,
 )
@@ -70,6 +71,47 @@ def largest_connected_component(mask: np.ndarray, structure: np.ndarray) -> np.n
     counts = np.bincount(labels.ravel())
     largest_label = 1 + int(np.argmax(counts[1:]))
     return labels == largest_label
+
+
+def keep_near_largest(
+    mask: np.ndarray,
+    structure: np.ndarray,
+    max_distance_mm: float,
+    spacing: tuple[float, float, float],
+) -> tuple[np.ndarray, int, int]:
+    """Keep the largest component and every component within max_distance_mm of it.
+
+    LCC fails on tubular organs because a small gap in the prediction splits
+    the organ and "keep the largest piece" then deletes the correctly
+    segmented part beyond the gap (E021). A fragment across a gap lies right
+    next to the main component, a stray false-positive blob lies far away:
+    filtering by distance keeps the first and removes the second.
+    Returns the filtered mask, number of input components, and number removed.
+    """
+    assert mask.dtype == bool, mask.dtype
+    assert mask.ndim == 3, mask.shape
+    assert max_distance_mm >= 0, max_distance_mm
+
+    if not mask.any():
+        return mask.copy(), 0, 0
+    labels, n_components = label(mask, structure=structure)
+    if n_components <= 1:
+        return mask.copy(), n_components, 0
+
+    counts = np.bincount(labels.ravel())
+    largest = 1 + int(np.argmax(counts[1:]))
+    # Distances only matter up to max_distance_mm: work in the bounding box of
+    # the largest component grown by that margin, not the whole volume.
+    margin = [int(np.ceil(max_distance_mm / s)) + 1 for s in spacing]
+    coords = np.argwhere(labels == largest)
+    lo = np.maximum(coords.min(0) - margin, 0)
+    hi = np.minimum(coords.max(0) + margin + 1, mask.shape)
+    box = tuple(slice(a, b) for a, b in zip(lo, hi))
+    dist = distance_transform_edt(labels[box] != largest, sampling=spacing)
+
+    near = np.unique(labels[box][(dist <= max_distance_mm) & (labels[box] > 0)])
+    keep = np.isin(labels, near)
+    return keep, n_components, n_components - len(near)
 
 
 def remove_small_components(
@@ -194,9 +236,13 @@ def process_volume(
     connectivity: int,
     closing_iterations: int,
     opening_iterations: int,
+    keep_near_by_class: dict[int, float] | None = None,
 ) -> dict[str, object]:
     """Process one NIfTI volume and return a compact summary."""
     pred, reference = load_prediction(path)
+    keep_near_by_class = keep_near_by_class or {}
+    # Our predictions carry the CT header (stitch.py), so these are real mm
+    spacing = tuple(float(z) for z in reference.header.get_zooms()[:3])
 
     unique = np.unique(pred)
     if not np.all(np.isin(unique, np.arange(K))):
@@ -210,6 +256,7 @@ def process_volume(
         | set(hole_fill_classes)
         | set(morph_classes)
         | set(min_size_by_class)
+        | set(keep_near_by_class)
     )
 
     processed = pred.copy()
@@ -224,6 +271,11 @@ def process_volume(
 
         if k in lcc_classes:
             mask = largest_connected_component(mask, structure)
+
+        if k in keep_near_by_class:
+            mask, n_near, n_far = keep_near_largest(mask, structure, keep_near_by_class[k], spacing)
+            class_summaries.append(f"class {k}: keep-near {keep_near_by_class[k]:g} mm: "
+                                   f"{n_near} components, {n_far} removed")
 
         if k in min_size_by_class:
             min_size = min_size_by_class[k]
@@ -342,6 +394,12 @@ def main(args: argparse.Namespace) -> None:
     print(f">> Found {len(files)} NIfTI predictions in {args.input_folder}")
 
     lcc_classes = validate_classes(args.lcc, args.num_classes, "--lcc")
+    keep_near_by_class: dict[int, float] = {}
+    for spec in args.keep_near:
+        k, mm = spec.split(":")
+        assert 0 < int(k) < args.num_classes, f"--keep_near: invalid class in {spec}"
+        assert int(k) not in lcc_classes, f"--keep_near: class {k} is also in --lcc"
+        keep_near_by_class[int(k)] = float(mm)
     hole_fill_classes = validate_classes(args.hole_fill, args.num_classes, "--3dhf")
     morph_classes = validate_classes(args.morph, args.num_classes, "--morph")
     min_size_by_class = parse_min_size_specs(
@@ -349,10 +407,10 @@ def main(args: argparse.Namespace) -> None:
         args.num_classes,
     )
 
-    if not (lcc_classes or hole_fill_classes or morph_classes or min_size_by_class):
+    if not (lcc_classes or hole_fill_classes or morph_classes or min_size_by_class or keep_near_by_class):
         raise ValueError(
             "No post-processing selected. Supply at least one of "
-            "--lcc, --min_size, --3dhf or --morph."
+            "--lcc, --keep_near, --min_size, --3dhf or --morph."
         )
 
     if args.closing_iterations == 0 and args.opening_iterations == 0 and morph_classes:
@@ -385,6 +443,7 @@ def main(args: argparse.Namespace) -> None:
         hole_fill_classes=hole_fill_classes,
         morph_classes=morph_classes,
         min_size_by_class=min_size_by_class,
+        keep_near_by_class=keep_near_by_class,
         connectivity=args.connectivity,
         closing_iterations=args.closing_iterations,
         opening_iterations=args.opening_iterations,
@@ -450,6 +509,17 @@ def get_args() -> argparse.Namespace:
         default=[],
         metavar="CLASS",
         help="Apply largest connected component to these classes",
+    )
+    parser.add_argument(
+        "--keep_near",
+        type=str,
+        nargs="+",
+        default=[],
+        metavar="CLASS:MM",
+        help=(
+            "Keep the largest component plus every component within MM millimetres "
+            "of it (gap-tolerant LCC), e.g. --keep_near 1:10 4:10"
+        ),
     )
     parser.add_argument(
         "--min_size",
