@@ -1,0 +1,43 @@
+# E_F07 + Skeleton Recall loss (Kirchhoff et al., ECCV 2024) on the tubular
+# organs: esophagus, trachea, aorta. Everything else is E_F07's exact config
+# (data, seed, 300 x 250 iterations, schedule), so E_F07 vs E_F10 isolates the
+# loss. Motivation: E_F07's remaining esophagus/aorta errors are gaps the
+# network predicts confidently (hysteresis could not fill them, removing the
+# scraps around them raised HD95); Dice/CE barely penalise a thin gap, while
+# every voxel of the GT centreline counts in the recall term. Not the heart:
+# it is not a tube and its errors are distant false positives, not gaps.
+dataset: "SEGTHOR_FULL_huwide_resampled"
+net_name: "UNet3D"
+loss_fn: "ce_dice_skel_recall"  # CE + soft Dice + skel_recall_weight x Skeleton Recall
+K: 5
+B: 2
+kernels: 32
+factor: 4
+max_channels: 320
+patch_size: [256, 256, 80]
+fg_ratio: 0.33
+lr: 0.0005
+betas: [0.9, 0.999]
+optimizer: "AdamW"
+weight_decay: 0.0001
+lr_scheduler: "cosine"
+lr_min: 0.0
+warmup_epochs: 5
+epochs: 300
+iters_per_epoch: 250
+val_every: 5
+val_overlap: 0.5
+amp: true
+temperature: 1.0
+seed: 123
+augment: true
+aug_rotation: 15.0
+aug_scale_min: 0.9
+aug_scale_max: 1.1
+aug_intensity: 0.1
+wandb_enabled: true
+wandb_project: "AI4M"
+wandb_run_name: "E_F10_unet3d_skelrecall"
+wandb_tags: ["full_dataset", "huwide", "resampled", "unet3d", "ce_dice", "augmentation", "3d", "adamw", "cosine", "skeleton_recall"]
+skel_recall_weight: 1.0
+skel_classes: [1, 3, 4]

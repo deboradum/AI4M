@@ -22,6 +22,9 @@ import torch.nn.functional as F
 from PIL import Image
 from torch import Tensor
 
+from scipy.ndimage import binary_dilation, generate_binary_structure
+from skimage.morphology import skeletonize
+
 from segthor.dataset import slice_id, AugParams
 
 
@@ -74,6 +77,22 @@ def load_split(root: Path, subset: str, with_gt: bool = True,
     return volumes
 
 
+def tubed_skeleton(gt: np.ndarray, classes: list[int]) -> np.ndarray:
+    """Per-class skeleton of a label volume, dilated once and kept inside the
+    organ: the "tubed skeleton" target of Skeleton Recall loss (Kirchhoff et
+    al., ECCV 2024). The dilation makes the thin centreline robust to the
+    resampling in augmentation. Returns a label map: k on class k's skeleton."""
+    out = np.zeros(gt.shape, dtype=np.uint8)
+    cross = generate_binary_structure(3, 1)
+    for k in classes:
+        mask = gt == k
+        if not mask.any():
+            continue
+        skel = skeletonize(mask)
+        out[binary_dilation(skel, structure=cross) & mask] = k
+    return out
+
+
 class PatchSampler:
     """Random (H, W, Z) patches from volumes kept on the device.
 
@@ -85,12 +104,15 @@ class PatchSampler:
     and upper esophagus few.
     """
     def __init__(self, volumes: dict[str, tuple[np.ndarray, np.ndarray]], patch_size: tuple[int, int, int],
-                 device: torch.device, fg_ratio: float = 0.33):
+                 device: torch.device, fg_ratio: float = 0.33,
+                 extras: dict[str, np.ndarray] | None = None):
         self.ids = sorted(volumes)
         self.patch_size = patch_size
         self.fg_ratio = fg_ratio
         self.imgs = [torch.from_numpy(volumes[i][0]).to(device) for i in self.ids]
         self.gts = [torch.from_numpy(volumes[i][1]).to(device) for i in self.ids]
+        # Optional extra label volume per patient (e.g. skeletons), cropped like the GT
+        self.extras = [torch.from_numpy(extras[i]).to(device) for i in self.ids] if extras else None
         # Foreground coordinates per patient and per class, subsampled to keep it small
         self.fg: list[list[Tensor]] = []
         for gt in self.gts:
@@ -115,8 +137,8 @@ class PatchSampler:
                 starts.append(min(max(c, 0), s - p))
         return starts
 
-    def sample(self, batch_size: int) -> tuple[Tensor, Tensor]:
-        imgs, gts = [], []
+    def sample(self, batch_size: int) -> tuple[Tensor, Tensor, Tensor | None]:
+        imgs, gts, extras = [], [], []
         for _ in range(batch_size):
             i = int(torch.randint(0, len(self.ids), ()).item())
             center = None
@@ -127,15 +149,20 @@ class PatchSampler:
             ph, pw, pz = self.patch_size
             imgs.append(self.imgs[i][h:h + ph, w:w + pw, z:z + pz])
             gts.append(self.gts[i][h:h + ph, w:w + pw, z:z + pz])
+            if self.extras is not None:
+                extras.append(self.extras[i][h:h + ph, w:w + pw, z:z + pz])
         img = torch.stack(imgs)[:, None].float() / 255  # (B, 1, H, W, Z)
         gt = torch.stack(gts).long()                    # (B, H, W, Z)
-        return img, gt
+        extra = torch.stack(extras).long() if extras else None
+        return img, gt, extra
 
 
-def augment_batch(img: Tensor, gt: Tensor, params: AugParams) -> tuple[Tensor, Tensor]:
+def augment_batch(img: Tensor, gt: Tensor, params: AugParams,
+                  extra: Tensor | None = None) -> tuple[Tensor, Tensor, Tensor | None]:
     """In-plane rotation/scale (one transform per volume, shared by every slice
     and the labels) and an additive intensity shift, as in the 2D augmentation.
-    No flips: the thorax is not left-right symmetric. Runs on the device."""
+    No flips: the thorax is not left-right symmetric. Runs on the device.
+    `extra` (another label volume, e.g. skeletons) gets the GT's transform."""
     B, C, H, W, Z = img.shape
     angle = (torch.rand(B, device=img.device) * 2 - 1) * math.radians(params.rotation_deg)
     scale = params.scale_min + torch.rand(B, device=img.device) * (params.scale_max - params.scale_min)
@@ -148,16 +175,18 @@ def augment_batch(img: Tensor, gt: Tensor, params: AugParams) -> tuple[Tensor, T
     grid = F.affine_grid(theta, (B * Z, C, H, W), align_corners=False)
 
     img2d = img.permute(0, 4, 1, 2, 3).reshape(B * Z, C, H, W)
-    gt2d = gt.permute(0, 3, 1, 2).reshape(B * Z, 1, H, W).float()
+    labels = [gt] if extra is None else [gt, extra]
+    lab2d = torch.stack([v.permute(0, 3, 1, 2).reshape(B * Z, H, W) for v in labels], 1).float()
     img2d = F.grid_sample(img2d, grid, mode='bilinear', padding_mode='zeros', align_corners=False)
-    gt2d = F.grid_sample(gt2d, grid, mode='nearest', padding_mode='zeros', align_corners=False)
+    lab2d = F.grid_sample(lab2d, grid, mode='nearest', padding_mode='zeros', align_corners=False)
     img = img2d.reshape(B, Z, C, H, W).permute(0, 2, 3, 4, 1)
-    gt = gt2d.reshape(B, Z, H, W).permute(0, 2, 3, 1).round().long()
+    lab = lab2d.reshape(B, Z, len(labels), H, W).permute(2, 0, 3, 4, 1).round().long()
+    gt, extra = lab[0], (lab[1] if extra is not None else None)
 
     if params.intensity_shift > 0:
         shift = (torch.rand(B, 1, 1, 1, 1, device=img.device) * 2 - 1) * params.intensity_shift
         img = (img + shift).clamp(0, 1)
-    return img.contiguous(), gt.contiguous()
+    return img.contiguous(), gt.contiguous(), (extra.contiguous() if extra is not None else None)
 
 
 def _starts(size: int, patch: int, step: int) -> list[int]:
