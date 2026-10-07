@@ -1,0 +1,147 @@
+{
+    "exp_id": "E_F09_baseline_pp_3dhf_all",
+    "parent_id": "E_F00_baseline",
+    "status": "completed",
+    "runtime_config": "configs/full/E_F00_baseline.yaml",
+    "runtime_results": "results/full/E_F00_baseline/postprocessed/3dhf_all/",
+    "runtime_volumes": "results/full/E_F00_baseline/postprocessed/3dhf_all/eval",
+    "change": "3D hole filling postprocessing across all foreground classes",
+    "notes": "Base predictions from E_F00_baseline with 3D binary hole filling applied to all foreground classes (1, 2, 3, 4).",
+    "conclusion": "Exact same results, no holes to be filled.",
+    "hypothesis": "",
+    "plan_reference": "",
+    "dataset": {
+        "name": "SEGTHOR_FULL",
+        "source": "segthor_train_full",
+        "split": {
+            "training_patients": null,
+            "validation_patients": 8,
+            "retains": null,
+            "seed": 123,
+            "fold": null
+        },
+        "resolution": [
+            256,
+            256
+        ],
+        "window_hu": null,
+        "size_normalized": false,
+        "classes": [
+            "background",
+            "esophagus",
+            "heart",
+            "trachea",
+            "aorta"
+        ]
+    },
+    "model": {
+        "name": "ENet",
+        "kernels": 8,
+        "factor": 2,
+        "in_slices": 1
+    },
+    "training": {
+        "mode": "full",
+        "loss": "CrossEntropy",
+        "optimizer": "Adam",
+        "learning_rate": 0.0005,
+        "betas": [
+            0.9,
+            0.999
+        ],
+        "batch_size": 8,
+        "epochs": 100,
+        "temperature": 1.0,
+        "patience": -1,
+        "seed": 123,
+        "scheduler": null,
+        "augmentation": false
+    },
+    "results": {
+        "epochs_completed": 100,
+        "best_epoch_by_validation_dice": 64,
+        "training": {
+            "device": "mps",
+            "parameter_count": null,
+            "total_minutes": null,
+            "best_2d_validation_dice": 0.834
+        },
+        "inference": {
+            "validation_patients": 8,
+            "seconds_per_patient_forward_and_stitch": 9.34
+        },
+        "metrics_3d": {
+            "dice_mean": {
+                "esophagus": 0.524,
+                "heart": 0.906,
+                "trachea": 0.737,
+                "aorta": 0.796,
+                "foreground_mean": 0.741
+            },
+            "dice_std": {
+                "esophagus": 0.121,
+                "heart": 0.016,
+                "trachea": 0.165,
+                "aorta": 0.097
+            },
+            "iou_mean": {
+                "esophagus": 0.364,
+                "heart": 0.828,
+                "trachea": 0.606,
+                "aorta": 0.670,
+                "foreground_mean": 0.617
+            },
+            "iou_std": {
+                "esophagus": 0.106,
+                "heart": 0.027,
+                "trachea": 0.177,
+                "aorta": 0.116
+            },
+            "hd95_mm_mean": {
+                "esophagus": 15.959,
+                "heart": 11.628,
+                "trachea": 15.131,
+                "aorta": 16.025,
+                "foreground_mean": 14.686
+            },
+            "hd95_mm_std": {
+                "esophagus": 8.287,
+                "heart": 3.272,
+                "trachea": 9.625,
+                "aorta": 7.360
+            },
+            "assd_mm_mean": {
+                "esophagus": 4.068,
+                "heart": 3.555,
+                "trachea": 3.048,
+                "aorta": 2.977,
+                "foreground_mean": 3.412
+            },
+            "assd_mm_std": {
+                "esophagus": 1.848,
+                "heart": 1.086,
+                "trachea": 2.058,
+                "aorta": 1.373
+            },
+            "nsd_mean": {
+                "esophagus": 0.490,
+                "heart": 0.474,
+                "trachea": 0.692,
+                "aorta": 0.622,
+                "foreground_mean": 0.569
+            },
+            "nsd_std": {
+                "esophagus": 0.104,
+                "heart": 0.062,
+                "trachea": 0.209,
+                "aorta": 0.145
+            }
+        },
+        "artifacts": {
+            "metrics_3d": "results/full/E_F00_baseline/postprocessed/3dhf_all/metrics",
+            "prediction_volumes": "results/full/E_F00_baseline/postprocessed/3dhf_all",
+            "training_log": "results/full/E_F00_baseline",
+            "inference_log": "results/full/E_F00_baseline/eval/timing.txt"
+        }
+    }
+}

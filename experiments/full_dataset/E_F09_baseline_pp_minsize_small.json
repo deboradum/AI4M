@@ -1,0 +1,147 @@
+{
+    "exp_id": "E_F09_baseline_pp_minsize_small",
+    "parent_id": "E_F00_baseline",
+    "status": "completed",
+    "runtime_config": "configs/full/E_F00_baseline.yaml",
+    "runtime_results": "results/full/E_F00_baseline/postprocessed/minsize_A/",
+    "runtime_volumes": "results/full/E_F00_baseline/postprocessed/minsize_A/eval",
+    "change": "Small connected component filtering per class (min size thresholds: esophagus=50, heart=50, trachea=50, aorta=100 voxels)",
+    "notes": "Base predictions from E_F00_baseline with small connected component filtering applied using thresholds: esophagus: 50 voxels, heart: 50 voxels, trachea: 50 voxels, aorta: 100 voxels. Removed 1,348 small artifact voxels in total across 8 validation volumes.",
+    "conclusion": "Negligible impact. Tiniest improvement on distance but not much.",
+    "hypothesis": "",
+    "plan_reference": "",
+    "dataset": {
+        "name": "SEGTHOR_FULL",
+        "source": "segthor_train_full",
+        "split": {
+            "training_patients": null,
+            "validation_patients": 8,
+            "retains": null,
+            "seed": 123,
+            "fold": null
+        },
+        "resolution": [
+            256,
+            256
+        ],
+        "window_hu": null,
+        "size_normalized": false,
+        "classes": [
+            "background",
+            "esophagus",
+            "heart",
+            "trachea",
+            "aorta"
+        ]
+    },
+    "model": {
+        "name": "ENet",
+        "kernels": 8,
+        "factor": 2,
+        "in_slices": 1
+    },
+    "training": {
+        "mode": "full",
+        "loss": "CrossEntropy",
+        "optimizer": "Adam",
+        "learning_rate": 0.0005,
+        "betas": [
+            0.9,
+            0.999
+        ],
+        "batch_size": 8,
+        "epochs": 100,
+        "temperature": 1.0,
+        "patience": -1,
+        "seed": 123,
+        "scheduler": null,
+        "augmentation": false
+    },
+    "results": {
+        "epochs_completed": 100,
+        "best_epoch_by_validation_dice": 64,
+        "training": {
+            "device": "mps",
+            "parameter_count": null,
+            "total_minutes": null,
+            "best_2d_validation_dice": 0.834
+        },
+        "inference": {
+            "validation_patients": 8,
+            "seconds_per_patient_forward_and_stitch": 9.34
+        },
+        "metrics_3d": {
+            "dice_mean": {
+                "esophagus": 0.525,
+                "heart": 0.906,
+                "trachea": 0.737,
+                "aorta": 0.796,
+                "foreground_mean": 0.741
+            },
+            "dice_std": {
+                "esophagus": 0.121,
+                "heart": 0.016,
+                "trachea": 0.166,
+                "aorta": 0.097
+            },
+            "iou_mean": {
+                "esophagus": 0.364,
+                "heart": 0.828,
+                "trachea": 0.607,
+                "aorta": 0.671,
+                "foreground_mean": 0.618
+            },
+            "iou_std": {
+                "esophagus": 0.106,
+                "heart": 0.027,
+                "trachea": 0.178,
+                "aorta": 0.116
+            },
+            "hd95_mm_mean": {
+                "esophagus": 16.903,
+                "heart": 11.628,
+                "trachea": 13.726,
+                "aorta": 15.994,
+                "foreground_mean": 14.563
+            },
+            "hd95_mm_std": {
+                "esophagus": 9.368,
+                "heart": 3.272,
+                "trachea": 10.359,
+                "aorta": 7.370
+            },
+            "assd_mm_mean": {
+                "esophagus": 4.017,
+                "heart": 3.555,
+                "trachea": 2.965,
+                "aorta": 2.960,
+                "foreground_mean": 3.374
+            },
+            "assd_mm_std": {
+                "esophagus": 1.850,
+                "heart": 1.089,
+                "trachea": 2.048,
+                "aorta": 1.372
+            },
+            "nsd_mean": {
+                "esophagus": 0.491,
+                "heart": 0.474,
+                "trachea": 0.694,
+                "aorta": 0.622,
+                "foreground_mean": 0.570
+            },
+            "nsd_std": {
+                "esophagus": 0.104,
+                "heart": 0.062,
+                "trachea": 0.210,
+                "aorta": 0.145
+            }
+        },
+        "artifacts": {
+            "metrics_3d": "results/full/E_F00_baseline/postprocessed/minsize_A/metrics",
+            "prediction_volumes": "results/full/E_F00_baseline/postprocessed/minsize_A",
+            "training_log": "results/full/E_F00_baseline",
+            "inference_log": "results/full/E_F00_baseline/eval/timing.txt"
+        }
+    }
+}
