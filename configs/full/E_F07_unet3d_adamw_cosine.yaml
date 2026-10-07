@@ -35,7 +35,7 @@ aug_rotation: 15.0
 aug_scale_min: 0.9
 aug_scale_max: 1.1
 aug_intensity: 0.1
-wandb_enabled: false
+wandb_enabled: true
 wandb_project: "AI4M"
 wandb_run_name: "E_F07_unet3d_adamw_cosine"
 wandb_tags: ["full_dataset", "huwide", "unet3d", "ce_dice", "augmentation", "3d", "adamw", "cosine"]
