@@ -237,10 +237,12 @@ def process_volume(
     closing_iterations: int,
     opening_iterations: int,
     keep_near_by_class: dict[int, float] | None = None,
+    min_ml_by_class: dict[int, float] | None = None,
 ) -> dict[str, object]:
     """Process one NIfTI volume and return a compact summary."""
     pred, reference = load_prediction(path)
     keep_near_by_class = keep_near_by_class or {}
+    min_ml_by_class = min_ml_by_class or {}
     # Our predictions carry the CT header (stitch.py), so these are real mm
     spacing = tuple(float(z) for z in reference.header.get_zooms()[:3])
 
@@ -257,6 +259,7 @@ def process_volume(
         | set(morph_classes)
         | set(min_size_by_class)
         | set(keep_near_by_class)
+        | set(min_ml_by_class)
     )
 
     processed = pred.copy()
@@ -276,6 +279,16 @@ def process_volume(
             mask, n_near, n_far = keep_near_largest(mask, structure, keep_near_by_class[k], spacing)
             class_summaries.append(f"class {k}: keep-near {keep_near_by_class[k]:g} mm: "
                                    f"{n_near} components, {n_far} removed")
+
+        if k in min_ml_by_class:
+            # A size in ml, converted with this scan's voxel volume: a voxel
+            # count is not the same size from one scan to the next (voxel
+            # volumes differ ~4x in SegTHOR).
+            voxel_ml = float(np.prod(spacing)) / 1000.0
+            min_voxels = max(1, int(round(min_ml_by_class[k] / voxel_ml)))
+            mask, n_ml, n_ml_removed = remove_small_components(mask, structure, min_size=min_voxels)
+            class_summaries.append(f"class {k}: min {min_ml_by_class[k]:g} ml ({min_voxels} voxels): "
+                                   f"{n_ml} components, {n_ml_removed} removed")
 
         if k in min_size_by_class:
             min_size = min_size_by_class[k]
@@ -400,6 +413,11 @@ def main(args: argparse.Namespace) -> None:
         assert 0 < int(k) < args.num_classes, f"--keep_near: invalid class in {spec}"
         assert int(k) not in lcc_classes, f"--keep_near: class {k} is also in --lcc"
         keep_near_by_class[int(k)] = float(mm)
+    min_ml_by_class: dict[int, float] = {}
+    for spec in args.min_ml:
+        k, ml = spec.split(":")
+        assert 0 < int(k) < args.num_classes, f"--min_ml: invalid class in {spec}"
+        min_ml_by_class[int(k)] = float(ml)
     hole_fill_classes = validate_classes(args.hole_fill, args.num_classes, "--3dhf")
     morph_classes = validate_classes(args.morph, args.num_classes, "--morph")
     min_size_by_class = parse_min_size_specs(
@@ -407,10 +425,11 @@ def main(args: argparse.Namespace) -> None:
         args.num_classes,
     )
 
-    if not (lcc_classes or hole_fill_classes or morph_classes or min_size_by_class or keep_near_by_class):
+    if not (lcc_classes or hole_fill_classes or morph_classes or min_size_by_class or keep_near_by_class
+            or min_ml_by_class):
         raise ValueError(
             "No post-processing selected. Supply at least one of "
-            "--lcc, --keep_near, --min_size, --3dhf or --morph."
+            "--lcc, --keep_near, --min_ml, --min_size, --3dhf or --morph."
         )
 
     if args.closing_iterations == 0 and args.opening_iterations == 0 and morph_classes:
@@ -444,6 +463,7 @@ def main(args: argparse.Namespace) -> None:
         morph_classes=morph_classes,
         min_size_by_class=min_size_by_class,
         keep_near_by_class=keep_near_by_class,
+        min_ml_by_class=min_ml_by_class,
         connectivity=args.connectivity,
         closing_iterations=args.closing_iterations,
         opening_iterations=args.opening_iterations,
@@ -520,6 +540,14 @@ def get_args() -> argparse.Namespace:
             "Keep the largest component plus every component within MM millimetres "
             "of it (gap-tolerant LCC), e.g. --keep_near 1:10 4:10"
         ),
+    )
+    parser.add_argument(
+        "--min_ml",
+        type=str,
+        nargs="+",
+        default=[],
+        metavar="CLASS:ML",
+        help="Remove components smaller than ML millilitres (spacing-aware), e.g. --min_ml 4:1",
     )
     parser.add_argument(
         "--min_size",
