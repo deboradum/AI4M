@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --partition=gpu_h100
 #SBATCH --gpus-per-node=1
-#SBATCH --cpus-per-task=6
-#SBATCH --mem=16G
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=32G
 #SBATCH --time=08:00:00
 
 # Usage, from the repository root:
@@ -43,7 +43,8 @@ echo "Results: $dest"
 # Python 3.11 headers before activating the venv.
 module load 2023
 module load Python/3.11.3-GCCcore-12.3.0
-source /home/scur0204/.venvs/ai4mi/bin/activate
+# Override with AI4MI_VENV=/path/to/venv when submitting from another account.
+source "${AI4MI_VENV:-/home/scur0204/.venvs/ai4mi}/bin/activate"
 echo "Python: $(command -v python)"
 python --version
 

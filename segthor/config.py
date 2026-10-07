@@ -25,6 +25,13 @@ class TrainConfig:
     loss_fn: str # Options: 'ce', 'weighted_ce', 'ce_dice', 'weighted_ce_dice', 'focal', 'weighted_focal', 'focal_dice'
     focal_gamma: float = 1.0  # For 'focal'
     class_weights: Optional[List[float]] = None  # For 'weighted_ce' and 'weighted_focal'
+    # Passed explicitly so AdamW never falls back to torch's implicit 0.01;
+    # 0.0 keeps every earlier (Adam) run unchanged.
+    weight_decay: float = 0.0
+    # None keeps the constant learning rate of every earlier run; "cosine"
+    # anneals lr -> lr_min over `epochs` (one step per epoch).
+    lr_scheduler: Optional[str] = None
+    lr_min: float = 0.0
     # 1 preserves the original 2D baseline; 3 uses [z-1, z, z+1] as channels.
     in_slices: int = 1
     # Augmentation (1.5 ablation); defaults reproduce the E001 baseline (off).
@@ -46,6 +53,9 @@ class TrainConfig:
     def __post_init__(self) -> None:
         assert self.in_slices in [1, 3], \
             f"Only 1 and 3 input slices are supported, got {self.in_slices}"
+        assert self.lr_scheduler in [None, "cosine"], \
+            f"Unsupported lr_scheduler '{self.lr_scheduler}'"
+        assert self.weight_decay >= 0, self.weight_decay
 
 NETWORKS = {
     'shallowCNN': shallowCNN,
