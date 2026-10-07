@@ -10,7 +10,7 @@ mkdir -p "$dest"
 echo "Running $exp on $(hostname), commit $(git rev-parse --short HEAD)"
 nvidia-smi --query-gpu=name --format=csv,noheader
 
-$PY -u train3d.py --config "$config" --dest "$dest" --gpu 2> "$dest/train.err" | tee "$dest/train.log"
+$PY -u train3d.py --config "$config" --dest "$dest" --gpu --resume 2> "$dest/train.err" | tee "$dest/train.log"
 
 $PY -u infer3d.py --config "$dest/config_dump.yaml" --weights "$dest/bestweights.pt" \
   --img_folder data/SEGTHOR_FULL_huwide/val/img --dest "$dest/eval" \

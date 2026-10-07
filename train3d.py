@@ -166,13 +166,39 @@ def run(args, config: TrainConfig3D) -> None:
                                                        weight_decay=config.weight_decay)
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda(config))
 
-    wandb_run = init_wandb_run(config, dest)
     log: list[dict] = []
     best_dice, best_epoch = 0.0, -1
+    start_epoch: int = 0
+    wandb_id: str | None = None
+
+    # Resume: this runs for hours outside a scheduler, so a crash, a reboot or a
+    # killed process should not cost the whole run. checkpoint.pt is rewritten
+    # (atomically) after every epoch and is the only thing needed to continue.
+    ckpt_path = dest / "checkpoint.pt"
+    if args.resume and ckpt_path.exists():
+        ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
+        net.load_state_dict(ckpt["net"])
+        optimizer.load_state_dict(ckpt["optimizer"])
+        scheduler.load_state_dict(ckpt["scheduler"])
+        start_epoch = ckpt["epoch"] + 1
+        best_dice, best_epoch = ckpt["best_dice"], ckpt["best_epoch"]
+        log = ckpt["log"]
+        wandb_id = ckpt.get("wandb_id")
+        torch.set_rng_state(ckpt["cpu_rng"])
+        if device.type == "cuda" and ckpt.get("cuda_rng") is not None:
+            torch.cuda.set_rng_state(ckpt["cuda_rng"], device)
+        print(f">> Resumed from {ckpt_path} at epoch {start_epoch} "
+              f"(best {best_dice:.4f} at epoch {best_epoch})")
+    elif args.resume:
+        print(f">> --resume given but {ckpt_path} does not exist: starting from scratch")
+
+    wandb_run = init_wandb_run(config, dest, run_id=wandb_id, resume=wandb_id is not None)
+    if wandb_run is not None:
+        wandb_id = wandb_run.id
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats(device)
 
-    for e in range(config.epochs):
+    for e in range(start_epoch, config.epochs):
         net.train()
         t0 = time.perf_counter()
         losses = []
@@ -228,8 +254,17 @@ def run(args, config: TrainConfig3D) -> None:
                 wandb_metrics[f"val/dice_class_{k}"] = entry["val_dice_per_class"][k]
         log_wandb_epoch(wandb_run, wandb_metrics)
 
-        torch.save(net.state_dict(), dest / "lastweights.pt")
         scheduler.step()
+
+        # Written last and atomically: a crash mid-save leaves the previous
+        # checkpoint intact rather than a truncated one.
+        torch.save({"epoch": e, "net": net.state_dict(), "optimizer": optimizer.state_dict(),
+                    "scheduler": scheduler.state_dict(), "best_dice": best_dice,
+                    "best_epoch": best_epoch, "log": log, "wandb_id": wandb_id,
+                    "cpu_rng": torch.get_rng_state(),
+                    "cuda_rng": torch.cuda.get_rng_state(device) if device.type == "cuda" else None},
+                   dest / "checkpoint.pt.tmp")
+        (dest / "checkpoint.pt.tmp").replace(ckpt_path)
 
     stats = {"params": n_params, "device": torch.cuda.get_device_name(device) if device.type == "cuda" else "cpu",
              "commit": git_commit(), "best_epoch": best_epoch, "best_val_dice_fg": best_dice,
@@ -247,6 +282,8 @@ def main() -> None:
     parser.add_argument('--dest', type=Path, required=True)
     parser.add_argument('--gpu', action='store_true')
     parser.add_argument('--debug', action='store_true', help="2 train / 1 val volume")
+    parser.add_argument('--resume', action='store_true',
+                        help="Continue from <dest>/checkpoint.pt if it exists (same W&B run)")
     parser.add_argument('--override', nargs='*', default=[], metavar="KEY=VALUE",
                         help="Override config entries (YAML values), e.g. epochs=2 iters_per_epoch=10")
     args = parser.parse_args()
