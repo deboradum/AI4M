@@ -35,6 +35,13 @@ class TrainConfig:
     aug_intensity: float = 0.1
     aug_elastic_alpha: float = 10.0
     aug_elastic_sigma: float = 4.0
+    # Optional scalar-only Weights & Biases logging. Disabled by default so
+    # existing experiments do not require a W&B account or the wandb package.
+    wandb_enabled: bool = False
+    wandb_project: str = "AI4M"
+    wandb_entity: Optional[str] = None
+    wandb_run_name: Optional[str] = None
+    wandb_tags: Optional[List[str]] = None
 
     def __post_init__(self) -> None:
         assert self.in_slices in [1, 3], \
