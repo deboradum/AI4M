@@ -13,3 +13,4 @@ projects
 configs/loss_tests
 analysis/figures/
 PRESENTATION/
+.venv/
