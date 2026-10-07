@@ -123,3 +123,19 @@ data/SEGTHOR_FULL_huwide_resampled: data/segthor_train_full
 		--shape 256 256 --split_file configs/splits/segthor_full_32_8.json -p -1 --window -1000 1000 \
 		--resample --target_spacing 1.0 1.0 2.5
 	mv $@_tmp $@
+
+# Test set (20 scans, Patient_41-60, no GT; readme link). Sliced with the same
+# window and resampling as SEGTHOR_FULL_huwide_resampled, into <dest>/test.
+data/segthor_test: data/test.zip
+	$(info $(yellow)unzip $<$(reset))
+	sha256sum -c data/test.zip.sha256
+	rm -rf $@_tmp $@ && mkdir -p $@_tmp
+	unzip -q $< -d $@_tmp
+	mv $@_tmp $@
+
+data/SEGTHOR_TEST_huwide_resampled: data/segthor_test
+	$(info $(green)python slice_segthor.py (test set, window -1000 1000, resampled 1.0 1.0 2.5)$(reset))
+	rm -rf $@_tmp $@
+	python $(CFLAGS) slice_segthor.py --source_dir data/segthor_test --dest_dir $@_tmp --only_test \
+		--shape 256 256 -p -1 --window -1000 1000 --resample --target_spacing 1.0 1.0 2.5
+	mv $@_tmp $@
