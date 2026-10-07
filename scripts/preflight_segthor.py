@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from segthor.config import TrainConfig, NETWORKS
 from segthor.dataset import AugParams, SliceDataset
-from main import build_loss, img_transform, gt_transform, target_classes_for_config
+from main import build_loss, build_optimizer, build_scheduler, img_transform, gt_transform, target_classes_for_config
 
 
 def load_config(path: Path) -> TrainConfig:
@@ -62,8 +62,8 @@ def main(config_path: Path) -> None:
     net = NETWORKS[config.net_name](config.in_slices, config.K,
                                     kernels=config.kernels, factor=config.factor).to(device)
     net.init_weights()
-    optimizer = getattr(torch.optim, config.optimizer)(net.parameters(), lr=config.lr,
-                                                         betas=tuple(config.betas))
+    optimizer = build_optimizer(net, config)
+    build_scheduler(optimizer, config)  # fail here, not hours in, on a bad schedule
     loss_fn = build_loss(config, target_classes_for_config(config, config.K))
 
     optimizer.zero_grad()

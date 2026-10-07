@@ -80,6 +80,15 @@ def set_seed(seed: int | None):
 
     print(f"Set seed {seed}")
 
+
+def seed_worker(worker_id: int) -> None:
+    # torch already gives each DataLoader worker its own seed derived from the
+    # main seed; propagate it to random/numpy so any augmentation using them
+    # is reproducible too.
+    worker_seed = torch.initial_seed() % 2**32
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
+
 def img_transform(img):
         img = img.convert('L')
         img = np.array(img)[np.newaxis, ...]
@@ -98,6 +107,24 @@ def gt_transform(K, img):
         img = class2one_hot(img, K=K)
         return img[0]
 
+def build_optimizer(net: nn.Module, config: TrainConfig) -> torch.optim.Optimizer:
+    """Build the configured optimizer for both training and GPU preflight."""
+    optim_class = getattr(torch.optim, config.optimizer)
+    return optim_class(net.parameters(), lr=config.lr, betas=tuple(config.betas),
+                       weight_decay=config.weight_decay)
+
+
+def build_scheduler(optimizer: torch.optim.Optimizer,
+                    config: TrainConfig) -> torch.optim.lr_scheduler.LRScheduler | None:
+    """Per-epoch learning-rate schedule; None keeps the learning rate constant."""
+    if config.lr_scheduler is None:
+        return None
+    if config.lr_scheduler == "cosine":
+        return torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=config.epochs,
+                                                          eta_min=config.lr_min)
+    raise ValueError(f"Unsupported lr_scheduler '{config.lr_scheduler}'")
+
+
 def setup(args, config: TrainConfig) -> tuple[nn.Module, Any, Any, DataLoader, DataLoader, int]:
     # Networks and scheduler
     gpu: bool = args.gpu and torch.cuda.is_available()
@@ -111,8 +138,7 @@ def setup(args, config: TrainConfig) -> tuple[nn.Module, Any, Any, DataLoader, D
     net.init_weights()
     net.to(device)
 
-    optim_class = getattr(torch.optim, config.optimizer)
-    optimizer = optim_class(net.parameters(), lr=config.lr, betas=tuple(config.betas))
+    optimizer = build_optimizer(net, config)
 
     # Dataset part
     B: int = config.B
@@ -132,10 +158,17 @@ def setup(args, config: TrainConfig) -> tuple[nn.Module, Any, Any, DataLoader, D
                              aug_params=aug_params,
                              in_slices=config.in_slices,
                              debug=args.debug)
+    # Workers decode PNGs and augment in parallel with the GPU; with
+    # num_workers=0 the GPU idles while the main process does it serially.
+    # Pinned memory lets the host-to-device copy run asynchronously.
+    loader_kwargs: dict[str, Any] = {"num_workers": config.num_workers,
+                                     "pin_memory": device.type == "cuda",
+                                     "persistent_workers": config.num_workers > 0,
+                                     "worker_init_fn": seed_worker}
     train_loader = DataLoader(train_set,
                               batch_size=B,
-                              num_workers=config.num_workers,
-                              shuffle=True)
+                              shuffle=True,
+                              **loader_kwargs)
 
     val_set = SliceDataset('val',
                            root_dir,
@@ -145,8 +178,8 @@ def setup(args, config: TrainConfig) -> tuple[nn.Module, Any, Any, DataLoader, D
                            debug=args.debug)
     val_loader = DataLoader(val_set,
                             batch_size=B,
-                            num_workers=config.num_workers,
-                            shuffle=False)
+                            shuffle=False,
+                            **loader_kwargs)
 
     args.dest.mkdir(parents=True, exist_ok=True)
 
@@ -187,6 +220,7 @@ def runTraining(args, config: TrainConfig):
 
     target_classes = target_classes_for_config(config, K)
     loss_fn = build_loss(config, target_classes)
+    scheduler = build_scheduler(optimizer, config)
 
     # Notice one has the length of the _loader_, and the other one of the _dataset_
     log_loss_tra: Tensor = torch.zeros((config.epochs, len(train_loader)))
@@ -256,8 +290,8 @@ def runTraining(args, config: TrainConfig):
                 j = 0
                 tq_iter = tqdm_(enumerate(loader), total=len(loader), desc=desc)
                 for i, data in tq_iter:
-                    img = data['images'].to(device)
-                    gt = data['gts'].to(device)
+                    img = data['images'].to(device, non_blocking=True)
+                    gt = data['gts'].to(device, non_blocking=True)
 
                     if opt:  # So only for training
                         opt.zero_grad()
@@ -381,6 +415,10 @@ def runTraining(args, config: TrainConfig):
         for k in range(1, K):
             wandb_metrics[f"val/dice_class_{k}"] = log_dice_val[e, :, k].mean().item()
         log_wandb_epoch(wandb_run, wandb_metrics)
+
+        # After logging, so the logged learning rate is the one this epoch used
+        if scheduler is not None:
+            scheduler.step()
 
         # patience=-1 disables it
         if config.patience != -1 and epochs_without_improvement >= config.patience:
