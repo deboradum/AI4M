@@ -1,0 +1,41 @@
+# 3D U-Net on E_F05/E_F06's data and recipe.  Same preprocessing (window
+# -1000..1000 HU, 256x256 in-plane, stratified 32/8 split): the volumes are
+# the stacked slices of SEGTHOR_FULL_huwide.  Same loss (CE + soft Dice),
+# optimizer (AdamW, wd 1e-4), cosine decay to 0, in-plane rotation/scale +
+# intensity augmentation.  3D-specific: random 256x256x80 patches (full
+# in-plane field of view, 80 slices) with 1/3 forced to hold foreground,
+# InstanceNorm, bf16 autocast, an epoch is 250 iterations, and the checkpoint
+# is chosen on the 3D Dice of sliding-window predictions of the val volumes.
+dataset: "SEGTHOR_FULL_huwide"
+net_name: "UNet3D"
+loss_fn: "ce_dice"
+K: 5
+B: 2
+kernels: 32
+factor: 4
+max_channels: 320
+patch_size: [256, 256, 80]
+fg_ratio: 0.33
+lr: 0.0005
+betas: [0.9, 0.999]
+optimizer: "AdamW"
+weight_decay: 0.0001
+lr_scheduler: "cosine"
+lr_min: 0.0
+warmup_epochs: 5
+epochs: 300
+iters_per_epoch: 250
+val_every: 5
+val_overlap: 0.5
+amp: true
+temperature: 1.0
+seed: 123
+augment: true
+aug_rotation: 15.0
+aug_scale_min: 0.9
+aug_scale_max: 1.1
+aug_intensity: 0.1
+wandb_enabled: false
+wandb_project: "AI4M"
+wandb_run_name: "E_F07_unet3d_adamw_cosine"
+wandb_tags: ["full_dataset", "huwide", "unet3d", "ce_dice", "augmentation", "3d", "adamw", "cosine"]
