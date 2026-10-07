@@ -15,11 +15,33 @@ from pprint import pprint
 import numpy as np
 import torch
 from PIL import Image
+from scipy.ndimage import label
 
 from stitch import group_by_patient, stitch_patient
 from segthor.utils import tqdm_
 from segthor.volumes import group_slices, load_volume, sliding_window_probs
 from train3d import load_config, build_net
+
+
+def hysteresis(probs: torch.Tensor, pred: np.ndarray, low: dict[int, float]) -> np.ndarray:
+    """Grow each organ into connected low-confidence voxels.
+
+    Gaps in tubular organs tend to be voxels where the organ was the runner-up
+    (e.g. p=0.35, argmax background). Hysteresis thresholding keeps voxels with
+    p_k >= low[k] only if they connect to the argmax region of class k, so they
+    can bridge a gap but cannot create isolated blobs. Growth is restricted to
+    argmax-background voxels: one organ never takes voxels from another.
+    """
+    pred = pred.copy()
+    for k, thr in low.items():
+        core = pred == k
+        if not core.any():
+            continue
+        cand = core | ((probs[k] >= thr).cpu().numpy() & (pred == 0))
+        lab, _ = label(cand)
+        seeds = np.unique(lab[core])
+        pred[np.isin(lab, seeds[seeds > 0]) & (pred == 0)] = k
+    return pred
 
 
 def main(args: argparse.Namespace) -> None:
@@ -32,6 +54,7 @@ def main(args: argparse.Namespace) -> None:
     net.load_state_dict(torch.load(args.weights, map_location=device, weights_only=True))
     net.to(device).eval()
 
+    low = {int(k): float(v) for k, v in (spec.split(":") for spec in args.hysteresis)}
     groups = group_slices(args.img_folder)
     png_dest: Path = args.dest / "png"
     png_dest.mkdir(parents=True, exist_ok=True)
@@ -47,6 +70,8 @@ def main(args: argparse.Namespace) -> None:
         probs = sliding_window_probs(net, img, tuple(config.patch_size), K, device,
                                      overlap=args.overlap, amp=config.amp, temperature=config.temperature)
         pred = probs.argmax(0).to(torch.uint8).cpu().numpy()
+        if low:
+            pred = hysteresis(probs, pred, low)
         if device.type == "cuda":
             torch.cuda.synchronize()
         t_forward += time.perf_counter() - t0
@@ -85,6 +110,8 @@ def get_args() -> argparse.Namespace:
                         help="e.g. 'data/segthor_train_full/train/{id_}/{id_}.nii.gz'")
     parser.add_argument('--grp_regex', type=str, default=r"(Patient_\d+)_\d+")
     parser.add_argument('--overlap', type=float, default=0.5)
+    parser.add_argument('--hysteresis', nargs='*', default=[], metavar="CLASS:LOW",
+                        help="Grow class CLASS into connected voxels with probability >= LOW, e.g. 1:0.3 4:0.3")
     parser.add_argument('--resample', action='store_true',
                         help="Undo the physical resampling when stitching (resampled datasets)")
     parser.add_argument('--target_spacing', type=float, nargs=3, default=[1.0, 1.0, 2.5])
