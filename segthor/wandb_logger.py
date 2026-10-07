@@ -11,7 +11,8 @@ from typing import Any
 import importlib
 
 
-def init_run(config: Any, dest: Path, *, wandb_module: Any | None = None) -> Any | None:
+def init_run(config: Any, dest: Path, *, wandb_module: Any | None = None,
+             run_id: str | None = None, resume: bool = False) -> Any | None:
     """Start a scalar-only W&B run when explicitly enabled in ``config``."""
     if not config.wandb_enabled:
         return None
@@ -35,6 +36,12 @@ def init_run(config: Any, dest: Path, *, wandb_module: Any | None = None) -> Any
     }
     if config.wandb_entity:
         kwargs["entity"] = config.wandb_entity
+    # A resumed run continues logging into the same W&B run instead of starting
+    # a second one that only holds the epochs after the crash.
+    if run_id is not None:
+        kwargs["id"] = run_id
+    if resume:
+        kwargs["resume"] = "allow"
 
     return wandb_module.init(**kwargs)
 
