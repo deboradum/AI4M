@@ -234,12 +234,23 @@ def main(args: argparse.Namespace):
     training_ids: list[str]
     validation_ids: list[str]
     test_ids: list[str]
-    training_ids, validation_ids, test_ids = get_splits(src_path, args.retains, args.fold, args.split_file)
+    splits: list[tuple[str, list[str]]]
+    if args.only_test:
+        # The test scans ship on their own (source_dir/test/Patient_XX.nii.gz, no GT):
+        # slice only those, with the same window/resampling as the training data.
+        training_ids, validation_ids = [], []
+        test_ids = sorted(Path(p.stem).stem for p in (src_path / 'test').glob('*.nii.gz'))
+        assert test_ids, f"No .nii.gz found in {src_path / 'test'}"
+        print(f"Founds {len(test_ids)} test ids: {test_ids[:10]}")
+        splits = [("test", test_ids)]
+    else:
+        training_ids, validation_ids, test_ids = get_splits(src_path, args.retains, args.fold, args.split_file)
+        splits = [("train", training_ids), ("val", validation_ids)]
 
     resolution_dict: dict[str, tuple[float, float, float]] = {}
 
     split_ids: list[str]
-    for mode, split_ids in zip(["train", "val"], [training_ids, validation_ids]):
+    for mode, split_ids in splits:
         dest_mode: Path = dest_path / mode
         print(f"Slicing {len(split_ids)} pairs to {dest_mode}")
 
@@ -264,6 +275,11 @@ def main(args: argparse.Namespace):
         for key, val in zip(split_ids, resolutions):
             resolution_dict[key] = val
 
+    if args.only_test:
+        with open(dest_path / "spacing.pkl", 'wb') as f:
+            pickle.dump(resolution_dict, f, pickle.HIGHEST_PROTOCOL)
+        return
+
     with open(dest_path / "split.json", 'w') as f:
         json.dump({"source": str(args.split_file) if args.split_file else f"random: seed {args.seed}, retains {args.retains}, fold {args.fold}",
                    "training": sorted(training_ids), "validation": sorted(validation_ids)}, f, indent=2)
@@ -284,6 +300,8 @@ def get_args() -> argparse.Namespace:
     parser.add_argument('--fold', type=int, default=0)
     parser.add_argument('--split_file', type=Path, default=None,
                         help="JSON from scripts/make_split.py with the validation patient ids; overrides --retains/--fold")
+    parser.add_argument('--only_test', action='store_true',
+                        help="Slice only source_dir/test/*.nii.gz (no GT) into dest_dir/test")
     parser.add_argument('--process', '-p', type=int, default=1,
                         help="The number of cores to use for processing")
     parser.add_argument('--window', type=float, nargs=2, default=None, metavar=("LOW", "HIGH"),
