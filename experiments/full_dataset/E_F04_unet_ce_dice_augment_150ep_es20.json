@@ -1,7 +1,7 @@
 {
   "exp_id": "E_F04_unet_ce_dice_augment_150ep_es20",
   "parent_id": "E_F01_hu_wide",
-  "status": "registered",
+  "status": "completed",
   "runtime_config": "configs/full/E_F04_unet_ce_dice_augment_150ep_es20.yaml",
   "runtime_results": "results/full/E_F04_unet_ce_dice_augment_150ep_es20",
   "runtime_volumes": "results/full/E_F04_unet_ce_dice_augment_150ep_es20/eval",
@@ -75,5 +75,96 @@
     "Compare 3D metrics with E_F01_hu_wide, noting that this is a composite recipe transfer rather than an architecture-only comparison.",
     "Report U-Net parameter count and GPU training time alongside accuracy."
   ],
-  "results": null
+  "results": {
+    "epochs_completed": 138,
+    "best_epoch_by_validation_dice": 117,
+    "training": {
+      "device": "cuda",
+      "device_name": "NVIDIA H100",
+      "parameter_count": 7762135,
+      "total_minutes": 445.59,
+      "best_2d_validation_dice": 0.912,
+      "early_stopping": "Stopped after epoch 138 (0-indexed final epoch 137) after 20 non-improving epochs."
+    },
+    "inference": {
+      "validation_patients": 8,
+      "validation_slices": 1329,
+      "seconds_per_patient_forward_and_stitch": 1.833,
+      "device": "cuda"
+    },
+    "metrics_3d": {
+      "dice_mean": {
+        "esophagus": 0.734,
+        "heart": 0.925,
+        "trachea": 0.873,
+        "aorta": 0.883,
+        "foreground_mean": 0.854
+      },
+      "dice_std": {
+        "esophagus": 0.083,
+        "heart": 0.019,
+        "trachea": 0.017,
+        "aorta": 0.022
+      },
+      "iou_mean": {
+        "esophagus": 0.586,
+        "heart": 0.862,
+        "trachea": 0.774,
+        "aorta": 0.791,
+        "foreground_mean": 0.753
+      },
+      "iou_std": {
+        "esophagus": 0.094,
+        "heart": 0.033,
+        "trachea": 0.027,
+        "aorta": 0.035
+      },
+      "hd95_mm_mean": {
+        "esophagus": 10.873,
+        "heart": 7.899,
+        "trachea": 11.129,
+        "aorta": 13.071,
+        "foreground_mean": 10.743
+      },
+      "hd95_mm_std": {
+        "esophagus": 6.78,
+        "heart": 2.82,
+        "trachea": 6.235,
+        "aorta": 5.071
+      },
+      "assd_mm_mean": {
+        "esophagus": 2.134,
+        "heart": 2.651,
+        "trachea": 1.324,
+        "aorta": 2.124,
+        "foreground_mean": 2.058
+      },
+      "assd_mm_std": {
+        "esophagus": 1.1,
+        "heart": 0.854,
+        "trachea": 0.347,
+        "aorta": 0.696
+      },
+      "nsd_mean": {
+        "esophagus": 0.748,
+        "heart": 0.537,
+        "trachea": 0.869,
+        "aorta": 0.779,
+        "foreground_mean": 0.733
+      },
+      "nsd_std": {
+        "esophagus": 0.105,
+        "heart": 0.085,
+        "trachea": 0.015,
+        "aorta": 0.073
+      }
+    },
+    "artifacts": {
+      "metrics_3d": "results/full/E_F04_unet_ce_dice_augment_150ep_es20/eval/metrics",
+      "prediction_volumes": "results/full/E_F04_unet_ce_dice_augment_150ep_es20/eval/nii",
+      "training_log": "results/full/E_F04_unet_ce_dice_augment_150ep_es20",
+      "inference_log": "results/full/E_F04_unet_ce_dice_augment_150ep_es20/eval/timing.txt",
+      "wandb_run": "https://wandb.ai/selman-gul-university-of-amsterdam/AI4M/runs/zmip88cr"
+    }
+  }
 }
