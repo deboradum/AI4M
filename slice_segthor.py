@@ -275,6 +275,13 @@ def main(args: argparse.Namespace):
         for key, val in zip(split_ids, resolutions):
             resolution_dict[key] = val
 
+    # Read back by infer.py / stitch.py, so inference undoes exactly this preprocessing
+    with open(dest_path / PREPROCESS_FILE, 'w') as f:
+        json.dump({"window": list(args.window) if args.window else None,
+                   "resample": args.resample,
+                   "target_spacing": list(args.target_spacing) if args.resample else None,
+                   "shape": list(args.shape)}, f, indent=2)
+
     if args.only_test:
         with open(dest_path / "spacing.pkl", 'wb') as f:
             pickle.dump(resolution_dict, f, pickle.HIGHEST_PROTOCOL)
@@ -283,13 +290,6 @@ def main(args: argparse.Namespace):
     with open(dest_path / "split.json", 'w') as f:
         json.dump({"source": str(args.split_file) if args.split_file else f"random: seed {args.seed}, retains {args.retains}, fold {args.fold}",
                    "training": sorted(training_ids), "validation": sorted(validation_ids)}, f, indent=2)
-
-    # Read back by infer.py / stitch.py, so inference undoes exactly this preprocessing
-    with open(dest_path / PREPROCESS_FILE, 'w') as f:
-        json.dump({"window": list(args.window) if args.window else None,
-                   "resample": args.resample,
-                   "target_spacing": list(args.target_spacing) if args.resample else None,
-                   "shape": list(args.shape)}, f, indent=2)
 
     with open(dest_path / "spacing.pkl", 'wb') as f:
         pickle.dump(resolution_dict, f, pickle.HIGHEST_PROTOCOL)
