@@ -184,9 +184,9 @@ def run(args, config: TrainConfig3D) -> None:
         best_dice, best_epoch = ckpt["best_dice"], ckpt["best_epoch"]
         log = ckpt["log"]
         wandb_id = ckpt.get("wandb_id")
-        torch.set_rng_state(ckpt["cpu_rng"])
+        torch.set_rng_state(ckpt["cpu_rng"].cpu())  # map_location moved it to the device
         if device.type == "cuda" and ckpt.get("cuda_rng") is not None:
-            torch.cuda.set_rng_state(ckpt["cuda_rng"], device)
+            torch.cuda.set_rng_state(ckpt["cuda_rng"].cpu(), device)
         print(f">> Resumed from {ckpt_path} at epoch {start_epoch} "
               f"(best {best_dice:.4f} at epoch {best_epoch})")
     elif args.resume:

@@ -77,8 +77,12 @@ def load_split(root: Path, subset: str, with_gt: bool = True,
 class PatchSampler:
     """Random (H, W, Z) patches from volumes kept on the device.
 
-    A fraction ``fg_ratio`` of the patches is forced to contain a randomly
-    chosen foreground voxel, otherwise the position is uniform.
+    A fraction ``fg_ratio`` of the patches is forced to contain a foreground
+    voxel, otherwise the position is uniform. The forced voxel is drawn class
+    first (uniform over the organs present in that patient, then a voxel of
+    that organ), as nnU-Net does: drawing a voxel directly would follow the
+    voxel counts, so the heart would get most forced patches and the trachea
+    and upper esophagus few.
     """
     def __init__(self, volumes: dict[str, tuple[np.ndarray, np.ndarray]], patch_size: tuple[int, int, int],
                  device: torch.device, fg_ratio: float = 0.33):
@@ -87,13 +91,17 @@ class PatchSampler:
         self.fg_ratio = fg_ratio
         self.imgs = [torch.from_numpy(volumes[i][0]).to(device) for i in self.ids]
         self.gts = [torch.from_numpy(volumes[i][1]).to(device) for i in self.ids]
-        # Foreground coordinates per patient, subsampled to keep it small
-        self.fg = []
+        # Foreground coordinates per patient and per class, subsampled to keep it small
+        self.fg: list[list[Tensor]] = []
         for gt in self.gts:
-            coords = torch.nonzero(gt > 0)
-            if len(coords) > 200_000:
-                coords = coords[torch.randperm(len(coords), device=coords.device)[:200_000]]
-            self.fg.append(coords)
+            per_class = []
+            for k in range(1, int(gt.max().item()) + 1):
+                coords = torch.nonzero(gt == k)
+                if len(coords) > 50_000:
+                    coords = coords[torch.randperm(len(coords), device=coords.device)[:50_000]]
+                if len(coords) > 0:
+                    per_class.append(coords)
+            self.fg.append(per_class)
         for img in self.imgs:
             assert all(s >= p for s, p in zip(img.shape, patch_size)), (img.shape, patch_size)
 
@@ -113,7 +121,8 @@ class PatchSampler:
             i = int(torch.randint(0, len(self.ids), ()).item())
             center = None
             if torch.rand(()).item() < self.fg_ratio and len(self.fg[i]) > 0:
-                center = self.fg[i][torch.randint(0, len(self.fg[i]), ())]
+                coords = self.fg[i][int(torch.randint(0, len(self.fg[i]), ()).item())]
+                center = coords[torch.randint(0, len(coords), ())]
             (h, w, z) = self._start(self.imgs[i].shape, center)
             ph, pw, pz = self.patch_size
             imgs.append(self.imgs[i][h:h + ph, w:w + pw, z:z + pz])
