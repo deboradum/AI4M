@@ -17,9 +17,10 @@ import json
 import time
 import random
 import argparse
+from multiprocessing import Pool
 from pathlib import Path
 from pprint import pprint
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from typing import Optional, List
 
 import yaml
@@ -30,7 +31,8 @@ import torch.nn.functional as F
 from segthor.dataset import AugParams
 from segthor.models.UNet3D import UNet3D
 from segthor.runstats import count_params, git_commit
-from segthor.volumes import load_split, PatchSampler, augment_batch, sliding_window_probs, dice_3d
+from segthor.volumes import (load_split, PatchSampler, augment_batch, sliding_window_probs, dice_3d,
+                             tubed_skeleton)
 from segthor.wandb_logger import init_run as init_wandb_run, log_epoch as log_wandb_epoch, finish_run as finish_wandb_run
 
 
@@ -70,10 +72,16 @@ class TrainConfig3D:
     wandb_entity: Optional[str] = None
     wandb_run_name: Optional[str] = None
     wandb_tags: Optional[List[str]] = None
+    # Skeleton Recall loss (Kirchhoff et al., ECCV 2024), with loss_fn "ce_dice_skel_recall"
+    skel_recall_weight: float = 0.0
+    skel_classes: List[int] = field(default_factory=lambda: [1, 3, 4])
 
     def __post_init__(self) -> None:
         assert self.net_name == "UNet3D", self.net_name
-        assert self.loss_fn == "ce_dice", self.loss_fn
+        # loss_fn names the whole loss; the skeleton weight must agree with it
+        assert self.loss_fn in ("ce_dice", "ce_dice_skel_recall"), self.loss_fn
+        assert (self.loss_fn == "ce_dice_skel_recall") == (self.skel_recall_weight > 0), \
+            f"loss_fn={self.loss_fn!r} but skel_recall_weight={self.skel_recall_weight}"
         assert len(self.patch_size) == 3
         assert all(p % 2 ** self.factor == 0 for p in self.patch_size), (self.patch_size, self.factor)
         assert self.lr_scheduler in [None, "cosine"], self.lr_scheduler
@@ -89,6 +97,46 @@ def ce_dice_loss(probs: torch.Tensor, gt_1h: torch.Tensor) -> torch.Tensor:
     eps = 1e-5
     dice = (2 * (probs * mask).sum(dims) + eps) / (probs.sum(dims) + mask.sum(dims) + eps)
     return ce + 1 - dice.mean()
+
+
+def skel_recall_loss(probs: torch.Tensor, skel: torch.Tensor, classes: list[int]) -> torch.Tensor:
+    """1 - mean over classes of the soft recall of the GT tubed skeleton.
+
+    Dice/CE barely penalise a thin gap in a tube, because the gap is a handful
+    of voxels. Every skeleton voxel counts here, so a gap that cuts the
+    centreline costs the same as missing any other stretch of it. Classes
+    absent from the batch are skipped."""
+    recalls = []
+    for k in classes:
+        s = (skel == k).float()
+        n = s.sum()
+        if n > 0:
+            recalls.append((probs[:, k] * s).sum() / n)
+    if not recalls:
+        return probs.sum() * 0.0
+    return 1 - torch.stack(recalls).mean()
+
+
+def train_skeletons(volumes: dict, classes: list[int], cache: Path) -> dict[str, np.ndarray]:
+    """Tubed skeletons of the training GT, computed once (CPU) and cached."""
+    if cache.exists():
+        data = np.load(cache)
+        if sorted(data.files) == sorted(volumes):
+            print(f">> Loaded skeletons from {cache}")
+            return {k: data[k] for k in data.files}
+    ids = sorted(volumes)
+    with Pool(min(16, len(ids))) as pool:
+        skels = pool.starmap(tubed_skeleton, [(volumes[i][1], classes) for i in ids])
+    out = dict(zip(ids, skels))
+    # skimage's 3D thinning can return nothing for some shapes (e.g. even-width
+    # boxes); an organ with no skeleton would silently drop out of the loss
+    for i in ids:
+        for k in classes:
+            assert not ((volumes[i][1] == k).any() and not (out[i] == k).any()), \
+                f"{i}: class {k} present but its skeleton is empty"
+    np.savez_compressed(cache, **out)
+    print(f">> Computed skeletons of {len(ids)} volumes for classes {classes}, cached to {cache}")
+    return out
 
 
 def load_config(path: Path) -> TrainConfig3D:
@@ -150,7 +198,12 @@ def run(args, config: TrainConfig3D) -> None:
         train_volumes = dict(list(train_volumes.items())[:2])
         val_volumes = dict(list(val_volumes.items())[:1])
 
-    sampler = PatchSampler(train_volumes, tuple(config.patch_size), device, fg_ratio=config.fg_ratio)
+    skels = None
+    if config.skel_recall_weight > 0:
+        dest.mkdir(parents=True, exist_ok=True)
+        skels = train_skeletons(train_volumes, config.skel_classes, dest / "train_skeletons.npz")
+    sampler = PatchSampler(train_volumes, tuple(config.patch_size), device, fg_ratio=config.fg_ratio,
+                           extras=skels)
     aug_params = AugParams(rotation_deg=config.aug_rotation, scale_min=config.aug_scale_min,
                            scale_max=config.aug_scale_max, intensity_shift=config.aug_intensity,
                            elastic_alpha=0.0)
@@ -202,10 +255,11 @@ def run(args, config: TrainConfig3D) -> None:
         net.train()
         t0 = time.perf_counter()
         losses = []
+        skel_losses: list[float] = []
         for _ in range(config.iters_per_epoch):
-            img, gt = sampler.sample(config.B)
+            img, gt, skel = sampler.sample(config.B)
             if config.augment:
-                img, gt = augment_batch(img, gt, aug_params)
+                img, gt, skel = augment_batch(img, gt, aug_params, extra=skel)
 
             optimizer.zero_grad(set_to_none=True)
             with torch.autocast(device.type, dtype=torch.bfloat16, enabled=config.amp and device.type == "cuda"):
@@ -214,12 +268,17 @@ def run(args, config: TrainConfig3D) -> None:
             probs = F.softmax(logits.float() / config.temperature, dim=1)
             gt_1h = F.one_hot(gt, config.K).permute(0, 4, 1, 2, 3)
             loss = ce_dice_loss(probs, gt_1h)
+            if skel is not None:
+                skel_term = skel_recall_loss(probs, skel, config.skel_classes)
+                loss = loss + config.skel_recall_weight * skel_term
+                skel_losses.append(skel_term.item())
             loss.backward()
             optimizer.step()
             losses.append(loss.item())
         t_train = time.perf_counter() - t0
 
         entry: dict = {"epoch": e, "lr": optimizer.param_groups[0]["lr"],
+                       **({"train_skel_loss": float(np.mean(skel_losses))} if skel_losses else {}),
                        "train_loss": float(np.mean(losses)), "train_s": t_train}
 
         if (e + 1) % config.val_every == 0 or e == config.epochs - 1:
@@ -247,6 +306,7 @@ def run(args, config: TrainConfig3D) -> None:
             json.dump(log, f, indent=1)
 
         wandb_metrics = {"epoch": e + 1, "learning_rate": entry["lr"], "train/loss": entry["train_loss"],
+                         **({"train/skel_recall_loss": entry["train_skel_loss"]} if "train_skel_loss" in entry else {}),
                          "best/val_dice_foreground": best_dice, "best/epoch": best_epoch + 1}
         if "val_dice_fg" in entry:
             wandb_metrics["val/dice_foreground"] = entry["val_dice_fg"]
