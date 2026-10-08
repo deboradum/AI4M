@@ -124,6 +124,19 @@ data/SEGTHOR_FULL_huwide_resampled: data/segthor_train_full
 		--resample --target_spacing 1.0 1.0 2.5
 	mv $@_tmp $@
 
+# 5-fold CV datasets (scripts/run_cv5.sh): same slicing as SEGTHOR_FULL_huwide_resampled,
+# split from configs/splits/segthor_full_cv5_f<k>.json (scripts/make_folds.py)
+CV5_DATASETS := $(addprefix data/SEGTHOR_FULL_huwide_resampled_cv,0 1 2 3 4)
+cv5_data: $(CV5_DATASETS)
+
+data/SEGTHOR_FULL_huwide_resampled_cv%: data/segthor_train_full configs/splits/segthor_full_cv5_f%.json
+	$(info $(green)python slice_segthor.py (full set, cv5 fold $*, window -1000 1000, resampled 1.0 1.0 2.5)$(reset))
+	rm -rf $@_tmp $@
+	python $(CFLAGS) slice_segthor.py --source_dir data/segthor_train_full --dest_dir $@_tmp \
+		--shape 256 256 --split_file configs/splits/segthor_full_cv5_f$*.json -p -1 --window -1000 1000 \
+		--resample --target_spacing 1.0 1.0 2.5
+	mv $@_tmp $@
+
 # Test set (20 scans, Patient_41-60, no GT; readme link). Sliced with the same
 # window and resampling as SEGTHOR_FULL_huwide_resampled, into <dest>/test.
 data/segthor_test: data/test.zip
