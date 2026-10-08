@@ -24,6 +24,7 @@ from segthor.dataset import make_slice_windows
 from main import img_transform
 from segthor.config import TrainConfig, NETWORKS
 from stitch import group_by_patient, stitch_patient
+from segthor.utils import resolve_resample
 from segthor.utils import probs2class, save_images, tqdm_
 
 
@@ -123,9 +124,11 @@ def main(args: argparse.Namespace) -> None:
     nii_dest: Path = args.dest / "nii"
     nii_dest.mkdir(parents=True, exist_ok=True)
 
+    resample, target_spacing = resolve_resample(args.img_folder, args.resample, args.target_spacing)
     t0 = time.perf_counter()
     for id_ in tqdm_(sorted(groups), desc=">> Stitching"):
-        stitch_patient(id_, groups[id_], nii_dest, K, args.scan_pattern, resample=args.resample)
+        stitch_patient(id_, groups[id_], nii_dest, K, args.scan_pattern,
+                       resample=resample, target_spacing=target_spacing)
     t_stitch = time.perf_counter() - t0
 
     n_patients: int = len(groups)
@@ -159,7 +162,10 @@ def get_args() -> argparse.Namespace:
     parser.add_argument('--gpu', action='store_true')
     parser.add_argument('--mps', action='store_true', help="Use Apple Silicon GPU")
     parser.add_argument('--resample', action='store_true',
-                        help="Enable inverse physical resampling for stitched volumes")
+                        help="Undo resampling when stitching. Only needed for datasets without preprocess.json, "
+                             "which otherwise decides it.")
+    parser.add_argument('--target_spacing', type=float, nargs=3, default=None,
+                        help="Spacing (mm) the slices were resampled to; same fallback role as --resample.")
 
     args = parser.parse_args()
     pprint(vars(args))

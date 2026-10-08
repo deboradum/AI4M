@@ -22,6 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import json
 from pathlib import Path
 from functools import partial
 from multiprocessing import Pool
@@ -37,6 +38,31 @@ from torch import Tensor, einsum
 tqdm_ = partial(tqdm, dynamic_ncols=True,
                 leave=True,
                 bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{rate_fmt}{postfix}]')
+
+
+# Written by slice_segthor.py at the root of every sliced dataset
+PREPROCESS_FILE = "preprocess.json"
+
+
+def resolve_resample(img_folder: Path, resample: bool,
+                     target_spacing: tuple[float, float, float] | None) -> tuple[bool, tuple[float, float, float]]:
+    """Resampling to undo when stitching predictions of the slices in img_folder
+    (<dataset>/<split>/img). The dataset's preprocess.json is authoritative; the
+    flags are only a fallback for datasets sliced before it existed."""
+    meta_path: Path = img_folder.parent.parent / PREPROCESS_FILE
+    if not meta_path.exists():
+        print(f">> No {meta_path}, using the flags: resample={resample}, target_spacing={target_spacing}")
+        return resample, target_spacing or (1.0, 1.0, 2.5)
+
+    meta = json.loads(meta_path.read_text())
+    assert not (resample and not meta["resample"]), f"--resample given but {meta_path} says the data is not resampled"
+    if meta["resample"]:
+        spacing = tuple(meta["target_spacing"])
+        assert target_spacing is None or tuple(target_spacing) == spacing, \
+            f"--target_spacing {target_spacing} contradicts {meta_path} ({spacing})"
+        print(f">> {meta_path}: undoing the resampling to {spacing} mm")
+        return True, spacing
+    return False, (1.0, 1.0, 2.5)
 
 
 class Dcm(AbstractContextManager):
