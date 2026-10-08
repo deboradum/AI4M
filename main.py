@@ -258,6 +258,8 @@ def runTraining(args, config: TrainConfig):
     wandb_run = init_wandb_run(config, args.dest)
 
     for e in range(config.epochs):
+        every: int = config.save_val_png_every
+        save_pngs: bool = every > 0 and (e % every == 0 or e == config.epochs - 1)
         for m in ['train', 'val']:
             match m:
                 case 'train':
@@ -318,7 +320,7 @@ def runTraining(args, config: TrainConfig):
                         loss.backward()
                         opt.step()
 
-                    if m == 'val':
+                    if m == 'val' and save_pngs:
                         with warnings.catch_warnings():
                             warnings.filterwarnings('ignore', category=UserWarning)
                             predicted_class: Tensor = probs2class(pred_probs)
@@ -387,7 +389,8 @@ def runTraining(args, config: TrainConfig):
             best_folder = args.dest / "best_epoch"
             if best_folder.exists():
                 rmtree(best_folder)
-            copytree(args.dest / f"iter{e:03d}", Path(best_folder))
+            if save_pngs:  # otherwise this epoch wrote no PNGs; a stale copy would mislabel the best epoch
+                copytree(args.dest / f"iter{e:03d}", Path(best_folder))
 
             torch.save(net, args.dest / "bestmodel.pkl")
             torch.save(net.state_dict(), args.dest / "bestweights.pt")
@@ -424,6 +427,12 @@ def runTraining(args, config: TrainConfig):
         if config.patience != -1 and epochs_without_improvement >= config.patience:
             print(f">>> Early stopping triggered after {e} epochs (no improvement for {config.patience} epochs).")
             break
+
+    # Final-epoch weights: a checkpoint chosen without looking at the validation
+    # scores, so the val metrics of a cross-validation fold stay unbiased.
+    torch.save(net.state_dict(), args.dest / "lastweights.pt")
+    with open(args.dest / "last_epoch.txt", 'w') as f:
+        f.write(f"{e}\n")
 
     finish_wandb_run(wandb_run)
 
