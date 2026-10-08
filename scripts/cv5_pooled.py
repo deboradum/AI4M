@@ -106,7 +106,46 @@ def main(a: argparse.Namespace) -> None:
                   + f" | {changed}/{len(ids)} |")
 
 
+def variants(a: argparse.Namespace) -> None:
+    """Post-processing variants (scripts/cv5_pp_sweep.sh, eval/pp_<name>) against raw and the
+    final post-processing, pooled per patient; Δ = variant − final, paired, 95% bootstrap CI."""
+    rng = np.random.default_rng(0)
+    subs = [("raw", "eval/metrics"), ("final", "eval/pp_final/metrics")] + \
+           [(v, f"eval/pp_{v}/metrics") for v in a.variants]
+    print("\n## Post-processing variants (pooled per patient)\n")
+    print("final = --lcc 2 3 --min_ml 4:1. Δ vs final: paired per patient, ✓/✗ = 95% CI excludes 0"
+          " in the variant's favour / against it.\n")
+    print("| Model | Variant | n | Dice eso | Dice trachea | Dice mean | HD95 eso | HD95 trachea | HD95 mean"
+          " | Δ Dice mean | Δ HD95 mean (mm) |")
+    print("|---|---|---|---|---|---|---|---|---|---|---|")
+    for run, name in MODELS:
+        ref = {m: load(a.root, run, "eval/pp_final/metrics", m) for m in ("dice", "hd95")}
+        for v, sub in subs:
+            cur = {m: load(a.root, run, sub, m) for m in ("dice", "hd95")}
+            ids = sorted(set(cur["dice"]) & set(ref["dice"]))
+            if not ids:
+                continue
+            d = np.stack([cur["dice"][i] for i in ids]); h = np.stack([cur["hd95"][i] for i in ids])
+            cells = [f"{d[:, 0].mean():.3f}", f"{d[:, 2].mean():.3f}", f"{np.nanmean(d, 1).mean():.3f}",
+                     f"{h[:, 0].mean():.1f}", f"{h[:, 2].mean():.1f}", f"{np.nanmean(h, 1).mean():.1f}"]
+            for m, nd, higher in (("dice", 3, True), ("hd95", 1, False)):
+                diff = np.array([np.nanmean(cur[m][i]) - np.nanmean(ref[m][i]) for i in ids])
+                if v == "final" or not np.any(diff):
+                    cells.append("–")
+                    continue
+                lo, hi = boot_ci(diff, rng)
+                sign = 1 if higher else -1
+                mark = " ✓" if sign * lo > 0 and sign * hi > 0 else " ✗" if sign * lo < 0 and sign * hi < 0 else ""
+                cells.append(f"{diff.mean():+.{nd}f}{mark}")
+            print(f"| {name} | {v} | {len(ids)} | " + " | ".join(cells) + " |")
+
+
 if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("--root", type=Path, default=Path("results/cv5"))
-    main(p.parse_args())
+    p.add_argument("--variants", nargs="*", default=[],
+                   help="Also compare post-processing variants eval/pp_<name> (scripts/cv5_pp_sweep.sh)")
+    args = p.parse_args()
+    main(args)
+    if args.variants:
+        variants(args)
