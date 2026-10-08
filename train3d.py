@@ -272,6 +272,9 @@ def run(args, config: TrainConfig3D) -> None:
              "peak_gpu_mb": torch.cuda.max_memory_allocated(device) / 2**20 if device.type == "cuda" else None}
     with open(dest / "stats.json", "w") as f:
         json.dump(stats, f, indent=2)
+    # Final-epoch weights (same file as main.py writes): chosen without looking at
+    # the validation scores, so a cross-validation fold's val metrics stay unbiased.
+    torch.save(net.state_dict(), dest / "lastweights.pt")
     finish_wandb_run(wandb_run)
     print(f">>> Done. Best 3D val Dice {best_dice:.4f} at epoch {best_epoch}")
 
