@@ -60,4 +60,4 @@ if [[ "$preflight_only" == "--preflight-only" ]]; then
     exit 0
 fi
 
-python -u main.py --config "$config" --dest "$dest" --gpu
+python -O -u main.py --config "$config" --dest "$dest" --gpu

@@ -29,7 +29,9 @@ nvidia-smi --query-gpu=name --format=csv,noheader
 
 mkdir -p "$dest"
 python -u scripts/preflight_segthor.py --config "$config"
-python -u main.py --config "$config" --dest "$dest" --gpu 2> "$dest/train.err" | tee "$dest/train.log" | { grep -E "Improved|Early|Error" || true; }
+# -O strips the per-iteration debug asserts in segthor/utils.py (torch.unique on
+# every batch, ~7x slower training); the preflight above still runs them once.
+python -O -u main.py --config "$config" --dest "$dest" --gpu 2> "$dest/train.err" | tee "$dest/train.log" | { grep -E "Improved|Early|Error" || true; }
 
 # Infer on the val slices of the dataset the run trained on; its preprocess.json
 # tells infer.py whether to undo a resampling when stitching.

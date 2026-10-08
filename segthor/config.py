@@ -49,13 +49,21 @@ class TrainConfig:
     wandb_entity: Optional[str] = None
     wandb_run_name: Optional[str] = None
     wandb_tags: Optional[List[str]] = None
+    # Validation predictions are written as PNGs under iter<e>/val every
+    # `save_val_png_every` epochs (and at the last epoch). 1 keeps the old
+    # behaviour; 0 never writes them (best_epoch/ is then not created either).
+    save_val_png_every: int = 1
 
     def __post_init__(self) -> None:
-        assert self.in_slices in [1, 3], \
-            f"Only 1 and 3 input slices are supported, got {self.in_slices}"
-        assert self.lr_scheduler in [None, "cosine"], \
-            f"Unsupported lr_scheduler '{self.lr_scheduler}'"
-        assert self.weight_decay >= 0, self.weight_decay
+        # Raised, not asserted: training runs under `python -O`, which strips asserts.
+        if self.in_slices not in [1, 3]:
+            raise ValueError(f"Only 1 and 3 input slices are supported, got {self.in_slices}")
+        if self.lr_scheduler not in [None, "cosine"]:
+            raise ValueError(f"Unsupported lr_scheduler '{self.lr_scheduler}'")
+        if self.weight_decay < 0:
+            raise ValueError(f"weight_decay must be >= 0, got {self.weight_decay}")
+        if self.save_val_png_every < 0:
+            raise ValueError(f"save_val_png_every must be >= 0, got {self.save_val_png_every}")
 
 NETWORKS = {
     'shallowCNN': shallowCNN,

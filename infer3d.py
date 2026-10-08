@@ -18,7 +18,7 @@ from PIL import Image
 from scipy.ndimage import label
 
 from stitch import group_by_patient, stitch_patient
-from segthor.utils import tqdm_
+from segthor.utils import resolve_resample, tqdm_
 from segthor.volumes import group_slices, load_volume, sliding_window_probs
 from train3d import load_config, build_net
 
@@ -87,10 +87,12 @@ def main(args: argparse.Namespace) -> None:
     png_groups = group_by_patient(sorted(png_dest.glob("*.png")), args.grp_regex)
     nii_dest: Path = args.dest / "nii"
     nii_dest.mkdir(parents=True, exist_ok=True)
+    # Same rule as infer.py: the dataset's preprocess.json decides, the flags are a fallback
+    resample, target_spacing = resolve_resample(args.img_folder, args.resample, args.target_spacing)
     t0 = time.perf_counter()
     for id_ in tqdm_(sorted(png_groups), desc=">> Stitching"):
         stitch_patient(id_, png_groups[id_], nii_dest, K, args.scan_pattern,
-                       resample=args.resample, target_spacing=tuple(args.target_spacing))
+                       resample=resample, target_spacing=target_spacing)
     t_stitch = time.perf_counter() - t0
 
     n = len(png_groups)
@@ -113,8 +115,10 @@ def get_args() -> argparse.Namespace:
     parser.add_argument('--hysteresis', nargs='*', default=[], metavar="CLASS:LOW",
                         help="Grow class CLASS into connected voxels with probability >= LOW, e.g. 1:0.3 4:0.3")
     parser.add_argument('--resample', action='store_true',
-                        help="Undo the physical resampling when stitching (resampled datasets)")
-    parser.add_argument('--target_spacing', type=float, nargs=3, default=[1.0, 1.0, 2.5])
+                        help="Undo resampling when stitching. Only needed for datasets without preprocess.json, "
+                             "which otherwise decides it.")
+    parser.add_argument('--target_spacing', type=float, nargs=3, default=None,
+                        help="Spacing (mm) the slices were resampled to; same fallback role as --resample.")
     parser.add_argument('--gpu', action='store_true')
     args = parser.parse_args()
     pprint(vars(args))
