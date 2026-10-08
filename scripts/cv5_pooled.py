@@ -20,7 +20,7 @@ import numpy as np
 ORGANS = ["esophagus", "heart", "trachea", "aorta"]
 METRICS = [("dice", "Dice", True, 3), ("hd95", "HD95 (mm)", False, 1), ("nsd", "NSD (2 mm)", True, 3),
            ("iou", "IoU", True, 3), ("assd", "ASSD (mm)", False, 2)]
-MODELS = [("E_F06_unet2d_adamw_cosine_150ep", "E_F06 2D"), ("E_F05_unet25d_adamw_cosine_150ep", "E_F05 2.5D"),
+MODELS = [("E_F11_enet_ce_dice", "E_F11 ENet"), ("E_F06_unet2d_adamw_cosine_150ep", "E_F06 2D"), ("E_F05_unet25d_adamw_cosine_150ep", "E_F05 2.5D"),
           ("E_F07_unet3d_adamw_cosine", "E_F07 3D")]
 
 
