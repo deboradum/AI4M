@@ -28,7 +28,7 @@ import scipy.ndimage
 from skimage.io import imread
 from skimage.transform import resize
 
-from segthor.utils import map_, tqdm_
+from segthor.utils import map_, resolve_resample, tqdm_
 
 
 def label_scale(K: int) -> float:
@@ -153,12 +153,17 @@ def main(args: argparse.Namespace) -> None:
 
     args.dest_folder.mkdir(parents=True, exist_ok=True)
 
+    if args.img_folder is not None:
+        resample, target_spacing = resolve_resample(args.img_folder, args.resample, args.target_spacing)
+    else:
+        resample, target_spacing = args.resample, tuple(args.target_spacing or (1.0, 1.0, 2.5))
+
     pfun = partial(stitch_patient,
                    dest_folder=args.dest_folder,
                    K=args.num_classes,
                    source_pattern=args.source_scan_pattern,
-                   resample=args.resample,
-                   target_spacing=tuple(args.target_spacing))
+                   resample=resample,
+                   target_spacing=target_spacing)
 
     jobs: list[tuple[str, list[Path]]] = [(id_, groups[id_]) for id_ in ids]
 
@@ -188,10 +193,13 @@ def get_args() -> argparse.Namespace:
                         help="Number of classes K (including background) used to encode the .png")
     parser.add_argument('--process', '-p', type=int, default=1,
                         help="Number of processes (1: sequential, -1: all cores)")
+    parser.add_argument('--img_folder', type=Path, default=None,
+                        help="Input slices the predictions came from (e.g. data/X/val/img); its dataset's "
+                             "preprocess.json then decides --resample and --target_spacing.")
     parser.add_argument('--resample', action='store_true',
                         help="Enable inverse physical resampling from target spacing.")
-    parser.add_argument('--target_spacing', type=float, nargs=3, default=[1.0, 1.0, 2.5],
-                        help="Target physical spacing (x, y, z) in mm. Used if --resample is set.")
+    parser.add_argument('--target_spacing', type=float, nargs=3, default=None,
+                        help="Target physical spacing (x, y, z) in mm, default 1.0 1.0 2.5. Used if --resample is set.")
 
     args = parser.parse_args()
     print(args)
