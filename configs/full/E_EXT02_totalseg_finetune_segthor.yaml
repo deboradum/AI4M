@@ -1,0 +1,62 @@
+# SegTHOR fine-tuning initialized from TotalSegmentator pretraining.
+# Controlled comparison against E_F04: only initialization changes.
+
+dataset: "SEGTHOR_FULL_huwide"
+mode: "full"
+
+loss_fn: "ce_dice"
+
+K: 5
+
+net_name: "UNet"
+
+B: 8
+kernels: 32
+factor: 4
+
+pretrained_weights: "results/full/E_EXT01_totalseg_pretrain_a100/bestweights.pt"
+
+lr: 0.0005
+betas: [0.9, 0.999]
+
+epochs: 150
+
+num_workers: 0
+
+temperature: 1.0
+
+optimizer: "Adam"
+
+seed: 123
+
+patience: 20
+
+in_slices: 1
+
+augment: true
+
+aug_rotation: 15.0
+
+aug_scale_min: 0.9
+aug_scale_max: 1.1
+
+aug_intensity: 0.1
+
+aug_elastic_alpha: 0.0
+aug_elastic_sigma: 4.0
+
+wandb_enabled: false
+
+wandb_project: "AI4M"
+
+wandb_run_name: "E_EXT02_totalseg_pretrained_segthor"
+
+wandb_tags:
+  - "full_dataset"
+  - "huwide"
+  - "unet"
+  - "ce_dice"
+  - "augmentation"
+  - "external_pretraining"
+  - "totalsegmentator"
+  - "finetuning"
