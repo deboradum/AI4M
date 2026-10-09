@@ -56,7 +56,6 @@ Each change was tested against its parent run, mostly on the ENet, then carried 
 | Post-processing: keep largest piece for every organ | Remove stray false positives | Hurt (ENet Dice 0.741 → 0.702): predictions with gaps lose real parts | No |
 | Post-processing: largest piece for heart and trachea, aorta pieces < 1 ml removed | Only for organs that are reliably one piece | Little Dice change, removes far-off fragments (one heart fragment 163 mm away) | Yes |
 | Gap-tolerant variant (`--keep_near`) | Slice models sometimes split the trachea in two | No supported gain | No |
-| Pre-training on TotalSegmentator, fine-tuning on SegTHOR | More labelled CTs of the same organs | Running, no result yet | – |
 
 Statistics: per-patient paired differences with 95% bootstrap CIs (10,000 resamples). Metrics are computed on volumes stitched back to native CT resolution with [metrics3d.py](metrics3d.py): Dice, IoU, HD95, ASSD, NSD at 2 mm.
 
