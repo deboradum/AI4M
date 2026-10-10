@@ -14,3 +14,5 @@ configs/loss_tests
 analysis/figures/
 PRESENTATION/
 .venv/
+
+results_snellius/

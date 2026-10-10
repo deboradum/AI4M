@@ -16,7 +16,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 sys.path.insert(0, str(Path(__file__).parent))
-from render_3d import ORGANS, meshes, draw  # noqa: E402
+from render_3d import ORGANS, meshes, draw, save_gif  # noqa: E402
 
 
 def main(args: argparse.Namespace) -> None:
@@ -48,7 +48,7 @@ def main(args: argparse.Namespace) -> None:
         h, w = frame.shape[:2]
         frames.append(frame[:h - h % 2, :w - w % 2].copy())
         plt.close(fig)
-    imageio.mimsave(args.dest.with_suffix(".gif"), frames, duration=1 / args.fps, loop=0)
+    save_gif(args.dest.with_suffix(".gif"), frames, args.fps)
     imageio.mimsave(args.dest.with_suffix(".mp4"), frames, fps=args.fps, macro_block_size=1)
     print(f"Wrote {args.dest}.gif/.mp4 ({len(frames)} frames)")
 

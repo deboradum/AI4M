@@ -1,0 +1,36 @@
+# Final model: E_F07's recipe trained on all 40 labelled patients (no held-out set).
+# The 5-fold CV of E_F07 is its estimate. val/ holds 8 patients that are also in training,
+# so its Dice is monitoring only; the submission uses lastweights.pt (final epoch).
+dataset: "SEGTHOR_FULL_huwide_resampled_all40"
+net_name: "UNet3D"
+loss_fn: "ce_dice"
+K: 5
+B: 2
+kernels: 32
+factor: 4
+max_channels: 320
+patch_size: [256, 256, 80]
+fg_ratio: 0.33
+lr: 0.0005
+betas: [0.9, 0.999]
+optimizer: "AdamW"
+weight_decay: 0.0001
+lr_scheduler: "cosine"
+lr_min: 0.0
+warmup_epochs: 5
+epochs: 300
+iters_per_epoch: 250
+val_every: 5
+val_overlap: 0.5
+amp: true
+temperature: 1.0
+seed: 123
+augment: true
+aug_rotation: 15.0
+aug_scale_min: 0.9
+aug_scale_max: 1.1
+aug_intensity: 0.1
+wandb_enabled: true
+wandb_project: "AI4M"
+wandb_run_name: "E_F12_unet3d_adamw_cosine_all40"
+wandb_tags: ["full_dataset", "huwide", "resampled", "unet3d", "ce_dice", "augmentation", "3d", "adamw", "cosine", "all40", "final"]
