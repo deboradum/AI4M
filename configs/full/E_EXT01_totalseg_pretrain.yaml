@@ -1,0 +1,63 @@
+# Pretrain the exact E_F04 U-Net recipe on the external TotalSegmentator data.
+#
+# The goal is to keep the model, loss, optimizer, and augmentation identical
+# to E_F04 while changing only the training dataset and pretraining budget.
+#
+# The resulting best weights will later be used to initialize the SegTHOR
+# E_F04 fine-tuning experiment.
+
+dataset: "TOTALSEG_PRETRAIN"
+mode: "full"
+
+loss_fn: "ce_dice"
+
+K: 5
+
+net_name: "UNet"
+
+B: 8
+kernels: 32
+factor: 4
+
+lr: 0.0005
+betas: [0.9, 0.999]
+
+epochs: 50
+
+num_workers: 0
+
+temperature: 1.0
+
+optimizer: "Adam"
+
+seed: 123
+
+patience: 10
+
+in_slices: 1
+
+augment: true
+
+aug_rotation: 15.0
+
+aug_scale_min: 0.9
+aug_scale_max: 1.1
+
+aug_intensity: 0.1
+
+aug_elastic_alpha: 0.0
+aug_elastic_sigma: 4.0
+
+wandb_enabled: false
+
+wandb_project: "AI4M"
+
+wandb_run_name: "E_EXT01_totalseg_pretrain"
+
+wandb_tags:
+  - "external_data"
+  - "totalsegmentator"
+  - "pretraining"
+  - "unet"
+  - "ce_dice"
+  - "augmentation"

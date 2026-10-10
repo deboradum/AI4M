@@ -23,6 +23,8 @@ class TrainConfig:
     seed: int
     patience: int
     loss_fn: str # Options: 'ce', 'weighted_ce', 'ce_dice', 'weighted_ce_dice', 'focal', 'weighted_focal', 'focal_dice'
+    # Optional checkpoint used to initialize the network before training.
+    pretrained_weights: str = ""
     focal_gamma: float = 1.0  # For 'focal'
     class_weights: Optional[List[float]] = None  # For 'weighted_ce' and 'weighted_focal'
     # Passed explicitly so AdamW never falls back to torch's implicit 0.01;
