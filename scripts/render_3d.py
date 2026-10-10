@@ -62,6 +62,23 @@ def draw(ax, mesh: dict[int, tuple], title: str, bounds: np.ndarray) -> None:
     ax.set_title(title, fontsize=12)
 
 
+def save_gif(path: Path, frames: list[np.ndarray], fps: float) -> None:
+    """GIF that plays smoothly in PowerPoint and browsers: whole-millisecond delays (imageio >= 2.28
+    reads `duration` in ms, so passing seconds wrote 0 ms frames and PowerPoint fell back to its own
+    timing), one palette shared by every frame (no flicker), infinite loop, no frame optimisation."""
+    from PIL import Image
+    imgs = [Image.fromarray(f) for f in frames]
+    # global palette from a strip of evenly spaced frames, then every frame mapped to it
+    sample = imgs[:: max(1, len(imgs) // 8)]
+    strip = Image.new("RGB", (sample[0].width, sample[0].height * len(sample)))
+    for i, im in enumerate(sample):
+        strip.paste(im, (0, i * im.height))
+    pal = strip.quantize(colors=255, method=Image.Quantize.MEDIANCUT)
+    q = [im.quantize(palette=pal, dither=Image.Dither.NONE) for im in imgs]
+    q[0].save(path, save_all=True, append_images=q[1:], duration=int(round(1000 / fps)), loop=0,
+              optimize=False, disposal=1)
+
+
 def main(args: argparse.Namespace) -> None:
     spacing = tuple(float(z) for z in nib.load(str(args.scan)).header.get_zooms()[:3])
     pred = np.asarray(nib.load(str(args.pred)).dataobj).astype(np.uint8)
@@ -97,7 +114,7 @@ def main(args: argparse.Namespace) -> None:
         plt.close(fig)
 
     imageio.mimsave(args.dest.with_suffix(".mp4"), frames, fps=args.fps, macro_block_size=1)
-    imageio.mimsave(args.dest.with_suffix(".gif"), frames[::2], duration=2 / args.fps, loop=0)
+    save_gif(args.dest.with_suffix(".gif"), frames[::2], args.fps / 2)
     print(f"Wrote {args.dest.with_suffix('.mp4')} and {args.dest.with_suffix('.gif')} ({len(frames)} frames)")
 
 
