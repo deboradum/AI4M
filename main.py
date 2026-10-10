@@ -135,7 +135,22 @@ def setup(args, config: TrainConfig) -> tuple[nn.Module, Any, Any, DataLoader, D
     K: int = config.K
     net_class = NETWORKS[config.net_name]
     net = net_class(config.in_slices, K, kernels=config.kernels, factor=config.factor)
-    net.init_weights()
+
+    pretrained_weights = getattr(config, "pretrained_weights", "")
+    if pretrained_weights:
+        weights_path = Path(pretrained_weights)
+        if not weights_path.is_file():
+            raise FileNotFoundError(f"Pretrained weights not found: {weights_path}")
+        print(f">> Loading pretrained weights from {weights_path}")
+        try:
+            state_dict = torch.load(weights_path, map_location="cpu", weights_only=True)
+        except TypeError:
+            state_dict = torch.load(weights_path, map_location="cpu")
+        net.load_state_dict(state_dict, strict=True)
+        print(">> Pretrained weights loaded successfully")
+    else:
+        net.init_weights()
+
     net.to(device)
 
     optimizer = build_optimizer(net, config)
